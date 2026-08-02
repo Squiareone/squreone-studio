@@ -154,7 +154,8 @@ export class AboutHero {
   }
 
   private buildMiniObjects(): void {
-    const objectCount = 210;
+    // Was 210 — bumped up per feedback ("背景照片还是加多一点") for a denser field.
+    const objectCount = 300;
 
     /*
      * Was: pick a random particle anchor per photo. Pure Math.random()
@@ -189,8 +190,9 @@ export class AboutHero {
       });
       const sprite = new THREE.Sprite(material);
       sprite.position.copy(anchor);
-      // Was lerp(0.22, 0.5, ...) — smaller per feedback (~30% down).
-      const seedScale = THREE.MathUtils.lerp(0.15, 0.35, Math.random());
+      // Was lerp(0.22, 0.5, ...) then lerp(0.15, 0.35, ...) — bumped back up
+      // ~20% per feedback ("照片稍微大一点 大20%左右").
+      const seedScale = THREE.MathUtils.lerp(0.18, 0.42, Math.random());
       const aspect = THREE.MathUtils.lerp(0.78, 1.22, Math.random());
       sprite.scale.set(seedScale * aspect, seedScale, 1);
       material.rotation = (Math.random() - 0.5) * 0.22;
@@ -272,23 +274,26 @@ export class AboutHero {
 
     // Cool + darken the highlights slightly so light backgrounds (cream
     // product shots, white sketch paper) don't read as bright cutouts.
+    // Was 0.82 — lightened per feedback ("稍微调的明显一些") so photos read
+    // more clearly instead of looking muted/washed out.
     ctx.globalCompositeOperation = 'multiply';
-    ctx.fillStyle = 'rgba(206, 212, 228, 0.82)';
+    ctx.fillStyle = 'rgba(206, 212, 228, 0.55)';
     ctx.fillRect(0, 0, size, size);
     ctx.globalCompositeOperation = 'source-over';
 
     // Soft vignette so the edges fade toward the scene's near-black instead
-    // of ending in a hard rectangle against the starfield.
+    // of ending in a hard rectangle against the starfield. Edge darkness
+    // eased back from 0.5 for the same "more visible" ask.
     const vignette = ctx.createRadialGradient(
       size / 2,
       size / 2,
-      size * 0.3,
+      size * 0.34,
       size / 2,
       size / 2,
-      size * 0.58,
+      size * 0.6,
     );
     vignette.addColorStop(0, 'rgba(0,0,0,0)');
-    vignette.addColorStop(1, 'rgba(5,6,10,0.5)');
+    vignette.addColorStop(1, 'rgba(5,6,10,0.32)');
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, size, size);
 
@@ -447,6 +452,12 @@ export class AboutHero {
         this.tmpV3.x += Math.sin(t * (0.72 + item.speed * 0.18)) * (0.18 + item.speed * 0.06);
         this.tmpV3.y += Math.cos(t * (1.06 + item.speed * 0.14)) * (0.2 + item.speed * 0.07);
         this.tmpV3.z += Math.sin(t * (0.63 + item.speed * 0.22)) * (0.28 + item.speed * 0.08);
+        // Scroll-linked approach: the camera sits on the +z side looking
+        // back toward the origin, so nudging every sprite's z further
+        // toward +z as scroll progresses (p: 0→1) reads as the photos
+        // drifting closer to the viewer — "往下滑动的时候，照片会靠近".
+        // Real perspective does the rest (nearer sprites project bigger).
+        this.tmpV3.z += p * 4.2;
         item.sprite.position.copy(this.tmpV3);
 
         const d = this.visibilityAnchor.distanceTo(this.tmpV3);
@@ -455,7 +466,9 @@ export class AboutHero {
         // Floor of 0.22 so far sprites are a faint presence instead of fully
         // gone — the old 0-floor plus the narrow near range is why nothing
         // was visible on load before the camera had moved.
-        const alpha = THREE.MathUtils.lerp(0.22, 0.9, nearMix) * fadeByScroll;
+        // Was lerp(0.22, 0.9, ...) — raised per feedback ("稍微调的明显一些")
+        // so photos read more clearly against the starfield.
+        const alpha = THREE.MathUtils.lerp(0.34, 1, nearMix) * fadeByScroll;
 
         // Ease toward hovered/unhovered — "稍微放大一点", not a snap.
         const isHovered = i === this.hoveredIndex;
@@ -466,8 +479,11 @@ export class AboutHero {
         item.sprite.visible = true;
         item.lastAlpha = boostedAlpha;
 
-        // Was 0.16–0.42 — scaled down ~30% per feedback (photos read too big).
-        const s = THREE.MathUtils.lerp(0.11, 0.29, nearMix) * (1 + item.hoverT * 0.3);
+        // Was 0.16–0.42, then 0.11–0.29 — bumped back up ~20% per feedback
+        // ("照片稍微大一点 大20%左右").
+        // Hover boost was 0.3 (+30%) — set to exactly +20% per feedback
+        // ("鼠标hover的时候，照片会放大20%").
+        const s = THREE.MathUtils.lerp(0.132, 0.348, nearMix) * (1 + item.hoverT * 0.2);
         item.sprite.scale.set(s * item.baseAspect, s, 1);
       }
 

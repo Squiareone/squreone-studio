@@ -393,42 +393,49 @@ html[data-lang='zh'] .story-detail-text {
 }
 
 .about-capability-card-back {
-  /* Poker-like back pattern while keeping the same neutral palette */
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.24) 0 14%, transparent 14.4%),
-    radial-gradient(circle at 50% 50%, rgba(87, 93, 128, 0.42) 0 6.2%, transparent 6.4%),
-    repeating-linear-gradient(45deg, rgba(96, 102, 138, 0.18) 0 2px, transparent 2px 10px),
-    repeating-linear-gradient(-45deg, rgba(96, 102, 138, 0.18) 0 2px, transparent 2px 10px),
-    linear-gradient(180deg, #dde0ec, #d3d6e5);
+  /* Adopted from "Luxury Gift Box Design" card style */
+  background-color: #000 !important;
+  background-image: url('../assets/card-back-pattern.svg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   transform: rotateY(180deg);
-  border: 2px solid rgba(248, 250, 255, 0.85);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 16px 46px rgba(0, 0, 0, 0.45);
   overflow: hidden;
 }
 
 .about-capability-card-back::before {
-  content: '';
-  position: absolute;
-  inset: 0.7em;
-  border-radius: 0.62em;
-  border: 1px solid rgba(255, 255, 255, 0.62);
-  pointer-events: none;
+  content: none;
 }
 
 .about-capability-card-back::after {
-  content: '';
+  content: none;
+}
+
+/* SquareOne mark centered in the card back's diamond frame (see the inline
+   <svg class="about-capability-card-mark"> in index.html) — added per
+   product ask: "试图加上 square one 的 logo". Same path as the intro-loader
+   mark, recolored for a light card face instead of the dark loader. */
+.about-capability-card-mark {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 38%;
+  width: 22%;
   aspect-ratio: 1;
-  transform: translate(-50%, -50%) rotate(45deg);
-  border-radius: 0.5em;
-  border: 1.5px solid rgba(255, 255, 255, 0.66);
-  box-shadow:
-    0 0 0 7px rgba(112, 118, 156, 0.18) inset,
-    0 0 0 13px rgba(255, 255, 255, 0.22) inset;
+  /* No extra rotateY here — .about-capability-card-back already carries its
+     own counter rotateY(180deg) so its children read upright, not mirrored. */
+  transform: translate(-50%, -50%);
+  overflow: visible;
   pointer-events: none;
+  z-index: 2;
+}
+
+.about-capability-card-mark path {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.96);
+  stroke-width: 6.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .about-capability-card-front {
