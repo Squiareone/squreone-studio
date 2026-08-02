@@ -1,0 +1,1109 @@
+/* —— Home = Lusion #about-who subset ——
+   Pin #home-hero-pin (type stays in viewport). Section height is AUTO so
+   ScrollTrigger pin-spacer can push the rest of the page (Expertise) down.
+   overflow must NOT be hidden on #home-hero or pin-spacer is clipped and
+   the horizontal slide never gets scroll room.
+*/
+#home-hero {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: calc(var(--vh, 1vh) * 100);
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--color-white);
+  overflow: visible;
+  z-index: 1;
+}
+
+/* PINNED viewport: clips the wide track while pinned in place */
+#home-hero-pin {
+  position: relative;
+  width: 100%;
+  height: calc(var(--vh, 1vh) * 100);
+  overflow: hidden;
+  /* Contain 300% track so it never expands document scroll width */
+  contain: paint;
+}
+
+/*
+ * 3 sequential panels. Use % of the pin (NOT 100vw) —
+ * 100vw includes scrollbar gutter and easily creates horizontal
+ * overflow → whole page shifts left with blank space on the right.
+ */
+#home-hero-track {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: stretch;
+  width: 300%;
+  height: 100%;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+.home-panel {
+  position: relative;
+  flex: 0 0 33.333333%;
+  width: 33.333333%;
+  max-width: 33.333333%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.home-panel-inner {
+  position: absolute;
+  inset: 0;
+  padding: calc(var(--header-size) * 4.4) var(--base-padding-x) clamp(26px, 3.2vw, 46px);
+}
+
+/* Panel 1: title bottom-left only */
+.home-panel-inner--start {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+
+/* Panel 2: secondary bottom-right */
+.home-panel-inner--end {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  text-align: right;
+  /* Panel 1/2 share the same base padding-bottom, but panel 2's text was
+     sitting noticeably closer to the frame edge than panel 1's — adding
+     extra room here specifically so it matches. This is an estimate from
+     the screenshot, not a measured value; nudge the added clamp() if it's
+     still off. */
+  padding-bottom: calc(clamp(26px, 3.2vw, 46px) + clamp(50px, 5vw, 90px));
+}
+
+#home-panel-2 .hero-secondary-title {
+  margin-left: auto;
+}
+
+/* Panel 3: story title top-left / body bottom-right */
+.home-panel-inner--story {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-top: calc(var(--base-padding-y) * 3.3);
+  padding-bottom: calc(var(--base-padding-y) * 1.2);
+}
+
+.hero-title {
+  font-size: clamp(2.35rem, 7.3vw, 7.3rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  margin: 0;
+  max-width: 19ch;
+  text-align: left;
+  text-transform: none;
+  white-space: pre-line;
+  will-change: transform, opacity;
+}
+
+html[data-lang='zh'] .hero-title {
+  font-family: 'Noto Sans SC', var(--font-sans);
+  font-size: clamp(2.35rem, 7.5vw, 7.3rem);
+  max-width: 14ch;
+  letter-spacing: 0.02em;
+  line-height: 1.04;
+}
+
+/* Lusion: animate whole line units / word units with translate3d — don't clip x */
+.hero-title .word-wrap,
+.hero-secondary-title .word-wrap,
+.story-detail-title .word-wrap,
+.story-detail-text .word-wrap {
+  display: inline-block;
+  overflow: visible;
+  vertical-align: top;
+  margin-right: 0.14em;
+  will-change: transform, opacity;
+}
+
+.hero-title .word-wrap.is-cjk,
+.hero-secondary-title .word-wrap.is-cjk,
+.story-detail-title .word-wrap.is-cjk,
+.story-detail-text .word-wrap.is-cjk {
+  margin-right: 0;
+}
+
+.hero-title .word,
+.hero-secondary-title .word,
+.story-detail-title .word,
+.story-detail-text .word {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.hero-secondary-title,
+.story-detail-title,
+.story-detail-text {
+  will-change: transform, opacity;
+}
+
+/* detail body: multi-line word units for Lusion details-style motion */
+.story-detail-text {
+  max-width: min(38ch, 92%);
+}
+
+.hero-scroll-hint {
+  margin-top: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  opacity: 1;
+  will-change: opacity, transform;
+  text-align: left;
+  line-height: calc(var(--base-padding-y) * 1 - 0.2em);
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+html[data-lang='zh'] .hero-scroll-hint {
+  font-family: 'Noto Sans SC', var(--font-sans);
+  text-transform: none;
+  letter-spacing: 0.08em;
+}
+
+.hero-secondary-title {
+  margin: 0;
+  /* Match .story-detail-title's size exactly, not its own clamp — same
+     style/weight as "Crafting uniqueness...", not italic. */
+  font-size: clamp(2.4rem, 6.2vw, 6.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  max-width: 15ch;
+  white-space: pre-line;
+  text-transform: none;
+  will-change: transform, opacity;
+}
+
+html[data-lang='zh'] .hero-secondary-title {
+  font-family: 'Noto Sans SC', var(--font-sans);
+  font-size: clamp(2.1rem, 5.3vw, 5.4rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  max-width: 8ch;
+}
+
+/* Story copy when used as home panel 3 */
+.story-detail-title {
+  margin: 0;
+  margin-top: 12px;
+  font-size: clamp(2.4rem, 6.2vw, 6.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  max-width: 11ch;
+  text-align: left;
+  align-self: flex-start;
+  will-change: transform, opacity;
+}
+
+.story-detail-text {
+  align-self: flex-end;
+  margin: 0;
+  margin-bottom: 12px;
+  font-size: 16pt;
+  line-height: 1.48;
+  letter-spacing: -0.01em;
+  max-width: 35ch;
+  text-align: left;
+  will-change: transform, opacity;
+}
+
+html[data-lang='zh'] .story-detail-title {
+  font-family: 'Noto Sans SC', var(--font-sans);
+  font-size: clamp(2.1rem, 5.3vw, 5.4rem);
+  line-height: 1.08;
+  max-width: 13ch;
+}
+
+html[data-lang='zh'] .story-detail-text {
+  font-family: 'Noto Sans SC', var(--font-sans);
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+  line-height: 1.72;
+  max-width: 30ch;
+}
+
+@media (max-width: 767px) {
+  .hero-title {
+    font-size: clamp(2.35rem, 14.5vw, 5.4rem);
+    max-width: 17ch;
+    line-height: 0.95;
+  }
+
+  .hero-secondary-title {
+    max-width: none;
+    font-size: clamp(2.05rem, 12.8vw, 4.8rem);
+  }
+
+  .home-panel-inner--story {
+    padding-top: calc(var(--base-padding-y) * 2.5);
+  }
+
+  .story-detail-title {
+    font-size: clamp(1.9rem, 10.5vw, 4.1rem);
+    max-width: 12ch;
+  }
+
+  .story-detail-text {
+    align-self: flex-start;
+    max-width: none;
+    font-size: clamp(0.98rem, 3.9vw, 1.3rem);
+    margin-top: 1.6rem;
+  }
+}
+
+/* —— Areas of expertise (Lusion AboutCapabilitySection layout) —— */
+#about-capability {
+  position: relative;
+  z-index: 1;
+  color: var(--color-white);
+  font-size: clamp(0.875rem, 1vw, 1.75rem);
+  background: transparent;
+  padding: var(--base-padding-y) var(--base-padding-x);
+  /* tall scroll runway for card fan (Lusion uses ~300vh under cards wrapper) */
+  min-height: calc(var(--vh, 1vh) * 100);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  /* Card 3D fan / title shifts must not expand page width */
+  overflow-x: clip;
+}
+
+#about-capability-title {
+  line-height: 1em;
+  font-size: 12vw;
+  margin-top: calc(2em - 2 * var(--base-padding-y));
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  position: relative;
+  z-index: 2;
+  max-width: 100%;
+}
+
+#about-capability-title .cap-line-mask {
+  position: relative;
+  overflow: hidden;
+  display: block;
+}
+
+#about-capability-title .cap-word {
+  display: inline-block;
+  will-change: transform;
+  transform: translate3d(0, 100%, 0);
+}
+
+#about-capability-title-line-2 {
+  left: 2em;
+  position: relative;
+}
+
+#about-capability-subheader {
+  position: absolute;
+  right: var(--base-padding-x);
+  top: var(--base-padding-y);
+  font-size: 0.875em;
+  width: 20em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  margin-top: calc(26vw - 2 * var(--base-padding-y));
+  z-index: 2;
+}
+
+#about-capability-subheader-text {
+  will-change: transform;
+  overflow: hidden;
+}
+
+#about-capability-subheader-text .cap-line-mask {
+  position: relative;
+  overflow: hidden;
+  display: block;
+}
+
+#about-capability-subheader-text .cap-line {
+  display: block;
+  will-change: transform;
+  transform: translate3d(0, 110%, 0);
+}
+
+/* Lusion: ~300vh under cards so fan/flip plays against section screenRatio */
+#about-capability-cards-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  margin: 4em auto calc(var(--vh, 1vh) * 300) auto;
+  z-index: 1;
+  box-sizing: border-box;
+  /* Fan motion paints outside; clip so layout width stays stable */
+  overflow: visible;
+}
+
+#about-capability-cards {
+  perspective: calc(var(--vh, 1vh) * 100);
+  width: 100%;
+  max-width: 100%;
+  perspective-origin: center center;
+  position: relative;
+  /* height set in JS to one card height on desktop */
+  min-height: 20vw;
+  transform-style: preserve-3d;
+  box-sizing: border-box;
+}
+
+/* Desktop: absolute stack → fan out (Lusion) */
+.about-capability-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  /* 4 cards + 3 gaps — match Lusion column math */
+  width: calc((100% - var(--grid-gap) * 3) / 4);
+  max-width: calc((100% - var(--grid-gap) * 3) / 4);
+  color: var(--color-black);
+  aspect-ratio: 314 / 438;
+  transform-style: preserve-3d;
+  font-size: 1.15vw;
+  transform: translate3d(0, 0, 0) rotateY(180deg);
+  will-change: transform;
+  transform-origin: center center;
+  box-sizing: border-box;
+}
+
+.about-capability-card-front,
+.about-capability-card-back {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.8em;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.about-capability-card-back {
+  /* Poker-like back pattern while keeping the same neutral palette */
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.24) 0 14%, transparent 14.4%),
+    radial-gradient(circle at 50% 50%, rgba(87, 93, 128, 0.42) 0 6.2%, transparent 6.4%),
+    repeating-linear-gradient(45deg, rgba(96, 102, 138, 0.18) 0 2px, transparent 2px 10px),
+    repeating-linear-gradient(-45deg, rgba(96, 102, 138, 0.18) 0 2px, transparent 2px 10px),
+    linear-gradient(180deg, #dde0ec, #d3d6e5);
+  transform: rotateY(180deg);
+  border: 2px solid rgba(248, 250, 255, 0.85);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.about-capability-card-back::before {
+  content: '';
+  position: absolute;
+  inset: 0.7em;
+  border-radius: 0.62em;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  pointer-events: none;
+}
+
+.about-capability-card-back::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 38%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border-radius: 0.5em;
+  border: 1.5px solid rgba(255, 255, 255, 0.66);
+  box-shadow:
+    0 0 0 7px rgba(112, 118, 156, 0.18) inset,
+    0 0 0 13px rgba(255, 255, 255, 0.22) inset;
+  pointer-events: none;
+}
+
+.about-capability-card-front {
+  padding: 1.15em 1.25em;
+  background: #e9e9f2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.34);
+}
+
+.about-capability-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.about-capability-card-header-text {
+  margin: 0;
+  font-size: calc(1.15em + 2px);
+  font-weight: 500;
+  color: var(--color-black);
+  text-transform: uppercase;
+}
+
+.about-capability-card-header-letter {
+  position: relative;
+  left: 0.15em;
+  font-size: 2.6em;
+  font-family: var(--font-mono);
+  margin: 0;
+  color: var(--color-black);
+}
+
+.about-capability-card-copy {
+  margin: 0;
+  font-size: calc(clamp(0.7rem, 0.95vw, 0.95rem) + 2px);
+  line-height: 1.45;
+  color: #444444;
+  letter-spacing: -0.01em;
+}
+
+html[data-lang='zh'] .about-capability-card-header-text,
+html[data-lang='zh'] #about-capability-subheader {
+  font-family: 'Noto Sans SC', var(--font-sans);
+}
+
+html[data-lang='zh'] .about-capability-card-copy {
+  font-family: 'Noto Sans SC', var(--font-sans);
+  font-size: calc(clamp(0.85rem, 1.1vw, 1rem) + 2px);
+  line-height: 1.65;
+}
+
+@media (max-width: 812px) {
+  #about-capability {
+    font-size: clamp(1rem, 1vw, 1.75rem);
+  }
+
+  #about-capability-title {
+    font-size: 18vw;
+    margin-top: calc(var(--base-padding-y) * 1.4);
+  }
+
+  #about-capability-title-line-2 {
+    left: 0;
+  }
+
+  #about-capability-subheader {
+    position: relative;
+    top: 0;
+    right: auto;
+    width: 100%;
+    margin-top: 1.4em;
+  }
+
+  #about-capability-cards-wrapper {
+    margin-top: 2.8em;
+    margin-bottom: calc(var(--vh, 1vh) * 20);
+  }
+
+  #about-capability-cards {
+    perspective: 300vw;
+    height: auto !important;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2em;
+  }
+
+  .about-capability-card {
+    position: relative;
+    width: 100%;
+    max-width: none;
+    font-size: clamp(1rem, 4.2vw, 1.35rem);
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+  }
+
+  .about-capability-card-back {
+    display: none;
+  }
+
+  .about-capability-card-header-text {
+    font-size: calc(1.15em + 2px);
+  }
+
+  .about-capability-card-header-letter {
+    font-size: 2.6em;
+  }
+
+  .about-capability-card-copy {
+    font-size: calc(clamp(0.88rem, 3.6vw, 1rem) + 2px);
+    line-height: 1.6;
+  }
+
+  html[data-lang='zh'] .about-capability-card-copy {
+    font-size: calc(clamp(0.88rem, 3.6vw, 1rem) + 2px);
+    line-height: 1.6;
+  }
+}
+
+/* —— Cases: same frame language as Home —— */
+#cases-scenarios {
+  position: relative;
+  z-index: 2;
+  height: calc(var(--vh, 1vh) * 280);
+  background: #080a0f;
+  color: var(--color-off-white);
+}
+
+#cases-track {
+  position: relative;
+  width: 100%;
+  height: calc(var(--vh, 1vh) * 100);
+  overflow: hidden;
+}
+
+.cases-frame {
+  position: absolute;
+  inset: 0;
+  padding: var(--base-padding-y) var(--base-padding-x);
+  pointer-events: none;
+  opacity: 0; /* GSAP takes over after init */
+}
+
+/* First paint before GSAP mounts */
+#cases-frame-intro {
+  opacity: 1;
+}
+
+#cases-frame-video {
+  pointer-events: auto;
+}
+
+.cases-frame-story {
+  position: absolute;
+  inset: 0;
+  padding: calc(var(--base-padding-y) * 3.3) var(--base-padding-x) calc(var(--base-padding-y) * 1.2);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.cases-title {
+  margin: 0;
+  margin-top: 12px;
+  font-size: clamp(2.4rem, 6.2vw, 6.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  max-width: 12ch;
+  text-align: left;
+  align-self: flex-start;
+  will-change: transform, opacity;
+}
+
+.cases-desc {
+  align-self: flex-end;
+  margin: 0;
+  margin-bottom: 12px;
+  font-size: clamp(1.05rem, 1.5vw, 1.45rem);
+  line-height: 1.58;
+  opacity: 0.78;
+  max-width: 32ch;
+  text-align: left;
+  will-change: transform, opacity;
+}
+
+#cases-frame-video {
+  display: grid;
+  place-items: center;
+}
+
+.cases-screen {
+  position: relative;
+  width: min(820px, 86vw);
+  aspect-ratio: 16 / 9;
+  border: none;
+  padding: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  background:
+    radial-gradient(120% 80% at 60% 30%, rgba(54, 66, 245, 0.4), transparent 55%),
+    linear-gradient(160deg, #1a1f34, #0b0f19 65%, #080b12);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transform-origin: center center;
+  will-change: transform, opacity, border-radius;
+  transition: box-shadow 0.35s ease;
+}
+
+.cases-screen:hover,
+.cases-screen.is-hovered {
+  box-shadow: 0 28px 70px rgba(26, 47, 251, 0.28);
+}
+
+.cases-screen.is-playing {
+  cursor: default;
+}
+
+.cases-screen.is-expanded {
+  width: min(1100px, 94vw);
+  border-radius: 10px;
+}
+
+.cases-screen-visual {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 40%, rgba(136, 50, 247, 0.35), transparent 42%),
+    radial-gradient(circle at 70% 60%, rgba(26, 47, 251, 0.45), transparent 48%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 40%);
+  animation: cases-visual-drift 10s ease-in-out infinite alternate;
+}
+
+@keyframes cases-visual-drift {
+  from {
+    transform: scale(1) translate(0, 0);
+  }
+  to {
+    transform: scale(1.08) translate(-2%, 2%);
+  }
+}
+
+.cases-screen-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 2;
+  transition: opacity 0.35s ease;
+}
+
+.cases-screen.is-playing .cases-screen-overlay {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cases-screen-hint {
+  font-family: var(--font-mono);
+  font-size: clamp(0.8rem, 1vw, 1.05rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(240, 241, 250, 0.82);
+  padding: 0.75em 1.2em;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(6px);
+}
+
+.cases-screen-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.cases-screen.is-playing .cases-screen-progress {
+  opacity: 1;
+}
+
+.cases-screen-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--color-white);
+  transform-origin: left center;
+}
+
+/* ===== Lusion EndSection port: Let's work together ===== */
+#cases-frame-finale {
+  pointer-events: none;
+  display: block;
+}
+
+.end-section-content {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - 3em);
+  transform: translate(-50%, -50%);
+  text-align: center;
+  width: 100%;
+  --cross-size: clamp(0.875rem, 1vw, 2rem);
+  --end-font-size: clamp(2.6rem, 10vw, 9rem);
+  will-change: transform;
+}
+
+.end-section-content-crosses {
+  position: absolute;
+  width: 60vw;
+  height: calc(100% + 10vh);
+  left: calc(50% - 30vw);
+  pointer-events: none;
+}
+
+.end-section-content-cross {
+  position: absolute;
+  width: var(--cross-size);
+  height: var(--cross-size);
+  transform: scale(0) rotate(0deg);
+  will-change: transform;
+}
+
+.end-section-content-cross::before,
+.end-section-content-cross::after {
+  position: absolute;
+  content: '';
+  width: var(--cross-size);
+  height: calc(0.125 * var(--cross-size));
+  left: 0;
+  top: calc(0.5 * var(--cross-size));
+  background: var(--color-white);
+}
+
+.end-section-content-cross::after {
+  transform: rotate(90deg);
+}
+
+.end-section-content-cross:nth-child(1) {
+  left: 0;
+  top: 0;
+}
+.end-section-content-cross:nth-child(2) {
+  right: 0;
+  top: 0;
+}
+.end-section-content-cross:nth-child(3) {
+  left: 0;
+  bottom: 0;
+}
+.end-section-content-cross:nth-child(4) {
+  left: calc(50% - 0.5rem);
+  bottom: 0;
+}
+.end-section-content-cross:nth-child(5) {
+  right: 0;
+  bottom: 0;
+}
+
+.end-section-subtitle {
+  overflow: hidden;
+  line-height: 1.4;
+  font-size: clamp(0.875rem, 1vw, 1.15rem);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  will-change: transform;
+}
+
+.end-section-subtitle .end-sub-word-mask {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: top;
+}
+
+.end-section-subtitle .end-sub-word {
+  display: inline-block;
+  will-change: transform;
+  transform: translate3d(0, 200%, 0) rotate(30deg);
+  margin-right: 0.35em;
+}
+
+.end-section-title {
+  --font-size: var(--end-font-size);
+  position: relative;
+  width: fit-content;
+  margin: 0.4em auto auto;
+  line-height: 1;
+  font-size: var(--font-size);
+  letter-spacing: -0.02em;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.end-section-title.is-interactive {
+  pointer-events: auto;
+}
+
+.end-section-title-link {
+  cursor: default;
+  display: block;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+}
+
+.end-section-title-link-line {
+  position: relative;
+  height: var(--font-size);
+  white-space: nowrap;
+}
+
+.end-section-title-link-line:last-child {
+  bottom: 0.02em;
+}
+
+.end-section-title-link-word {
+  position: relative;
+  overflow: hidden;
+  height: 0.95em;
+  display: inline-block;
+  vertical-align: top;
+  margin-right: 0.22em;
+}
+
+.end-section-title-link-word:last-child {
+  margin-right: 0;
+}
+
+.end-section-title-link-word .char {
+  display: inline-block;
+  position: relative;
+  will-change: transform;
+  transform: translate3d(0, 100%, 0);
+}
+
+.end-section-title-link-word .char-wrapper {
+  position: relative;
+  top: -0.2em;
+  display: inline-block;
+  will-change: transform;
+}
+
+.end-section-title-link-word .char-wrapper .char {
+  float: left;
+}
+
+.end-section-title-link-word .char-wrapper .char:last-child {
+  clear: both;
+}
+
+.end-section-title-top-decoration,
+.end-section-title-bottom-left-decoration,
+.end-section-title-bottom-right-decoration {
+  position: absolute;
+  height: 0.07em;
+  background: var(--color-white);
+  transform: scale3d(0, 1, 1);
+  transform-origin: left center;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.end-section-title-top-decoration {
+  width: calc(100% - 0.05em);
+  top: 0.85em;
+  left: 0.05em;
+}
+
+.end-section-title-bottom-left-decoration {
+  width: 0.82em;
+  left: 0.25em;
+  bottom: 0.1em;
+}
+
+.end-section-title-bottom-right-decoration {
+  left: 1.78em;
+  width: 2.45em;
+  bottom: 0.1em;
+}
+
+/* CONTINUE TO SCROLL pill */
+.end-bottom {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1em;
+  height: 3.375em;
+  width: 15em;
+  left: 50%;
+  bottom: calc(var(--vh, 1vh) * 7);
+  transform: translate(-50%);
+  text-align: center;
+  background: #fff;
+  border-radius: 100px;
+  box-shadow:
+    0 6px 10px rgba(0, 0, 0, 0.04),
+    0 2px 4px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  font-size: 1.05em;
+  text-decoration: none;
+  color: #000;
+  pointer-events: auto;
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+.end-bottom-text-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.end-bottom-text {
+  white-space: nowrap;
+  line-height: 1.5;
+  font-size: 0.72em;
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+  color: #000;
+  animation: 3s 0.2s infinite cubic-bezier(0.1, 0, 0.1, 1) end-text-animation;
+}
+
+.end-bottom-text:last-child {
+  position: absolute;
+  top: -1.5em;
+  left: 0;
+  right: 0;
+}
+
+.end-bottom-arrow-container {
+  position: relative;
+  overflow: hidden;
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+}
+
+.end-bottom-arrow {
+  width: 1em;
+  height: 1em;
+  background: currentColor;
+  /* CSS chevron down via mask */
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 16.5 4.5 9l1.4-1.4L12 13.7l6.1-6.1L19.5 9 12 16.5z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 16.5 4.5 9l1.4-1.4L12 13.7l6.1-6.1L19.5 9 12 16.5z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  animation: 3s infinite cubic-bezier(0.1, 0, 0.1, 1) end-arrow-animation;
+}
+
+.end-bottom-arrow:last-child {
+  position: absolute;
+  top: -1em;
+  left: 0;
+}
+
+.end-bottom-arrow-container:last-child .end-bottom-arrow {
+  animation-delay: 0.3s;
+}
+
+@keyframes end-text-animation {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%,
+  100% {
+    transform: translate3d(0, 1.5em, 0);
+  }
+}
+
+@keyframes end-arrow-animation {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%,
+  100% {
+    transform: translate3d(0, 1em, 0);
+  }
+}
+
+html[data-lang='zh'] .cases-title,
+html[data-lang='zh'] .cases-desc,
+html[data-lang='zh'] .end-section-title-link,
+html[data-lang='zh'] .end-section-subtitle,
+html[data-lang='zh'] .cases-screen-hint,
+html[data-lang='zh'] .end-bottom-text {
+  font-family: 'Noto Sans SC', var(--font-sans);
+}
+
+html[data-lang='zh'] .cases-screen-hint {
+  text-transform: none;
+  letter-spacing: 0.06em;
+}
+
+html[data-lang='zh'] .end-section-subtitle {
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+
+html[data-lang='zh'] .end-bottom-text {
+  letter-spacing: 0.04em;
+}
+
+/*
+ * "合作，从这里开始" = single CJK line (EN = two Latin lines).
+ * EN top deco at top:0.85em sits near the bottom of line 1; on a single CJK line
+ * a mid-line top (e.g. 0.58em) reads as a strike through the glyphs — wrong.
+ * Keep lines taller so 汉字 aren't clipped; put all bars under the text.
+ */
+html[data-lang='zh'] .end-section-title {
+  line-height: 1.15;
+}
+
+html[data-lang='zh'] .end-section-title-link-line {
+  height: 1.22em;
+}
+
+html[data-lang='zh'] .end-section-title-link-word {
+  height: 1.18em;
+}
+
+html[data-lang='zh'] .end-section-title-link-word .char-wrapper {
+  top: 0;
+}
+
+/*
+ * EN: top bar on line1 + two short segments under line2 ("together!").
+ * ZH single line: one full underline under the phrase only — short dual
+ * segments were tuned for a short Latin second line and look wrong here.
+ */
+html[data-lang='zh'] .end-section-title-top-decoration {
+  top: auto;
+  bottom: 0.1em;
+  left: 0.06em;
+  width: calc(100% - 0.12em);
+}
+
+html[data-lang='zh'] .end-section-title-bottom-left-decoration,
+html[data-lang='zh'] .end-section-title-bottom-right-decoration {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .cases-desc {
+    align-self: flex-start;
+    max-width: none;
+  }
+
+  .end-section-content {
+    --end-font-size: clamp(2.2rem, 14vw, 4.2rem);
+    top: 42%;
+  }
+
+  .end-section-content-crosses {
+    width: calc(100% - 2 * var(--base-padding-x));
+    left: var(--base-padding-x);
+  }
+
+  .end-section-title {
+    width: 100%;
+  }
+
+  .end-section-title-link-line {
+    white-space: normal;
+  }
+
+  .end-bottom {
+    width: min(15em, 88vw);
+    bottom: calc(var(--vh, 1vh) * 5);
+  }
+}

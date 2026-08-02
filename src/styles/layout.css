@@ -1,0 +1,196 @@
+/* Lusion: canvas is a fixed full-viewport layer behind UI */
+#canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  z-index: 0;
+  display: block;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+  pointer-events: none;
+}
+
+/*
+ * Follows the hovered floating photo in the WebGL starfield (AboutHero.ts
+ * drives the transform + text every frame, projecting the sprite's world
+ * position to screen space). Fixed + pointer-events:none so it never
+ * blocks the raycast it's reacting to.
+ */
+.hero-image-label {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  pointer-events: none;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  color: var(--color-white);
+  background: rgba(8, 10, 15, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 0.5em 1em;
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transform: translate3d(-50%, -140%, 0);
+  transition: opacity 0.2s ease;
+  will-change: transform, opacity;
+}
+
+html[data-lang='zh'] .hero-image-label {
+  font-family: 'Noto Sans SC', var(--font-sans);
+  letter-spacing: 0.02em;
+}
+
+.hero-image-label.is-visible {
+  opacity: 1;
+}
+
+@media (max-width: 812px) {
+  /* No hover on touch — keep it out of the layout entirely on mobile. */
+  .hero-image-label {
+    display: none;
+  }
+}
+
+#transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  pointer-events: none;
+}
+
+/* Do NOT put transform / will-change:transform here — it breaks
+   position:fixed pins (ScrollTrigger) so hero text scrolls away. */
+#page-container {
+  position: relative;
+}
+
+/* Lusion-style custom scroll progress (replaces native scrollbar) */
+#scroll-indicator {
+  position: fixed;
+  top: calc(var(--vh, 1vh) * 40);
+  right: 6px;
+  width: 2px;
+  height: calc(var(--vh, 1vh) * 20);
+  z-index: 60;
+  pointer-events: none;
+  border-radius: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+#scroll-indicator-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--color-white);
+  border-radius: 1px;
+  transform: scaleY(0);
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+/*
+ * Lusion #about-who-team-faces analogue — LEFT hit region only.
+ * Face-cursor appears only while eased pointer is inside this box
+ * (right side stays clear for reading, same as Lusion team-right).
+ */
+#story-next-cursor-zone {
+  position: fixed;
+  left: 0;
+  top: 0;
+  /* ~Lusion faces: large left mass; right column reserved for copy */
+  width: min(70vw, 58rem);
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  /* debug: outline: 1px solid rgba(255,0,0,.2); */
+}
+
+@media (max-width: 812px) {
+  #story-next-cursor-zone {
+    /* Mobile has no face-cursor; zone unused */
+    display: none;
+  }
+}
+
+/*
+ * Lusion #about-who-face-cursor (about.CNa9RfUh.css) — fixed to viewport.
+ * Desktop: JS sets display flex/none + transform every frame (pointer-events:none).
+ */
+#story-next-arrow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 8.6rem;
+  height: 8.6rem;
+  border-radius: 100%;
+  border: none;
+  padding: 0;
+  margin: 0;
+  /* Match menu btn: #header-right-menu-btn */
+  background: var(--color-dark-white);
+  color: var(--color-black);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 58;
+  transform: scale(0);
+  /* Critical Lusion rule: disc never captures the pointer — system cursor stays on the mouse */
+  pointer-events: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#story-next-arrow-svg {
+  width: 30%;
+  height: 30%;
+  display: block;
+  overflow: visible;
+  transform-box: fill-box;
+  transform-origin: center center;
+  pointer-events: none;
+}
+
+@media (min-aspect-ratio: 21/9) {
+  #story-next-arrow {
+    width: 9em;
+    height: 9em;
+  }
+}
+
+/* Mobile: Lusion hides face-cursor; keep fixed center continue */
+@media (max-width: 812px) {
+  #story-next-arrow {
+    left: 50%;
+    top: 64%;
+    width: 5.2rem;
+    height: 5.2rem;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate3d(-50%, -50%, 0) scale(0.6);
+    transition:
+      opacity 0.35s ease,
+      visibility 0.35s ease,
+      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  #story-next-arrow.is-visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    cursor: pointer;
+    transform: translate3d(-50%, -50%, 0) scale(1);
+  }
+}

@@ -1,0 +1,104 @@
+@import 'lenis/dist/lenis.css';
+@import './tokens.css';
+@import './layout.css';
+@import './header.css';
+@import './intro.css';
+@import './home-hero.css';
+@import './contact.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  line-height: 1.15;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Lusion-style: no native browser scrollbar — only custom #scroll-indicator */
+html,
+body {
+  width: 100%;
+  margin: 0;
+  overscroll-behavior: none;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+html.no-js body {
+  /* page visible while scripts load; intro handles first paint */
+}
+
+html.is-ready {
+  visibility: visible;
+}
+
+body {
+  background: var(--color-black);
+  color: var(--color-white);
+  font-family: var(--font-sans);
+  /*
+   * Clip horizontal overflow without overflow-x:hidden (that breaks sticky/pin).
+   * overflow-x: clip still contains 100vw / transform bleed on modern engines.
+   */
+  overflow-x: clip;
+}
+
+html.is-black-bg body {
+  background: var(--color-black);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+em,
+.is-italic {
+  font-style: italic;
+}
+
+#ui {
+  position: relative;
+  /* Above WebGL canvas (z-index 0); sections stack inside document flow */
+  z-index: 1;
+  pointer-events: none;
+}
+
+#ui a,
+#ui button,
+#ui input,
+#ui textarea,
+#header,
+#header-menu {
+  pointer-events: auto;
+}
+
+.section {
+  position: relative;
+  width: 100%;
+}
+
+.page {
+  position: relative;
+}

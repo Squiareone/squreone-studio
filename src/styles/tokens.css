@@ -1,0 +1,38 @@
+/* Design tokens — mapped from Lusion saved HTML, fonts substituted */
+:root {
+  --color-error: #e90000;
+  --color-off-white: #f0f1fa;
+  --color-white: #fff;
+  --color-dark-white: #e4e6ef;
+  --color-off-white-semi: rgba(240, 241, 250, 0.7);
+  --color-black: #000;
+  --color-green: #c1ff00;
+  --color-blue: #1a2ffb;
+  --color-red: #ff4c41;
+  --color-grey-blue: #2b2e3a;
+  --color-dark-blue: #071bdf;
+  --color-purple: #8832f7;
+  /* Lusion menu hover pill / link color */
+  --header-color: #0016ec;
+  --header-text-color: #000000;
+
+  --grid-gap: 4vw;
+  --base-padding-x: max(5vw, 40px);
+  --base-padding-y: clamp(30px, 4vw, 50px);
+  --header-size: clamp(0.75rem, 1vw, 2rem);
+  --global-border-radius: 10px;
+  --cross-size: 1.5em;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --vh: 1vh;
+  --scroll-progress: 0;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --base-padding-x: max(5vw, 40px);
+    --base-padding-y: clamp(30px, 4vw, 50px);
+  }
+}
