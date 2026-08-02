@@ -495,7 +495,12 @@ html[data-lang='zh'] .about-capability-card-copy {
   }
 
   #about-capability-title {
-    font-size: 18vw;
+    /* Was a flat 18vw — on a narrow phone that's wide enough to push
+       "EXPERTISE" past the screen edge (clipped, per feedback: 标题...要随
+       屏幕自适应). Clamped so it scales fluidly with viewport width instead
+       of just multiplying vw, and stays inside the safe text width at every
+       phone size from ~320px up to the 812px breakpoint ceiling. */
+    font-size: clamp(2.1rem, 11.5vw, 3.6rem);
     margin-top: calc(var(--base-padding-y) * 1.4);
   }
 
@@ -509,6 +514,12 @@ html[data-lang='zh'] .about-capability-card-copy {
     right: auto;
     width: 100%;
     margin-top: 1.4em;
+  }
+
+  #about-capability-subheader-text {
+    /* Explicit fluid clamp instead of inheriting a near-flat em chain —
+       same "字体要随屏幕自适应" ask, applied to the body copy too. */
+    font-size: clamp(0.85rem, 3.2vw, 1.05rem);
   }
 
   #about-capability-cards-wrapper {
@@ -531,12 +542,16 @@ html[data-lang='zh'] .about-capability-card-copy {
     font-size: clamp(1rem, 4.2vw, 1.35rem);
     left: auto !important;
     top: auto !important;
-    transform: none !important;
+    /* Was `transform: none !important` — that silently killed the JS-driven
+       rotateY scroll-flip on mobile (HomeHeroTimeline's applyCardsFromSection
+       already computes a per-card rotateY for <=812px, it just never
+       rendered). Removed so each card flips from back → front as it scrolls
+       into view, same interaction as desktop — per feedback: "这几张卡片的
+       交互小屏幕里也要有翻动的效果". */
   }
 
-  .about-capability-card-back {
-    display: none;
-  }
+  /* Back face now stays visible on mobile too, so the flip actually shows
+     the card-back pattern mid-rotation instead of a blank gap. */
 
   .about-capability-card-header-text {
     font-size: calc(1.15em + 2px);
