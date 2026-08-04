@@ -376,7 +376,7 @@ html[data-lang='zh'] .story-detail-text {
   color: var(--color-black);
   aspect-ratio: 314 / 438;
   transform-style: preserve-3d;
-  font-size: 1.15vw;
+  font-size: clamp(0.82rem, 1.02vw, 1.08rem);
   transform: translate3d(0, 0, 0) rotateY(180deg);
   will-change: transform;
   transform-origin: center center;
@@ -455,7 +455,7 @@ html[data-lang='zh'] .story-detail-text {
 
 .about-capability-card-header-text {
   margin: 0;
-  font-size: calc(1.15em + 2px);
+  font-size: clamp(1rem, 1.08vw, 1.18rem);
   font-weight: 500;
   color: var(--color-black);
   text-transform: uppercase;
@@ -464,7 +464,7 @@ html[data-lang='zh'] .story-detail-text {
 .about-capability-card-header-letter {
   position: relative;
   left: 0.15em;
-  font-size: 2.6em;
+  font-size: clamp(2.05rem, 2.48vw, 2.86rem);
   font-family: var(--font-mono);
   margin: 0;
   color: var(--color-black);
@@ -472,8 +472,8 @@ html[data-lang='zh'] .story-detail-text {
 
 .about-capability-card-copy {
   margin: 0;
-  font-size: calc(clamp(0.7rem, 0.95vw, 0.95rem) + 2px);
-  line-height: 1.45;
+  font-size: clamp(0.76rem, 0.96vw, 0.96rem);
+  line-height: 1.5;
   color: #444444;
   letter-spacing: -0.01em;
 }
@@ -485,11 +485,92 @@ html[data-lang='zh'] #about-capability-subheader {
 
 html[data-lang='zh'] .about-capability-card-copy {
   font-family: 'Noto Sans SC', var(--font-sans);
-  font-size: calc(clamp(0.85rem, 1.1vw, 1rem) + 2px);
-  line-height: 1.65;
+  font-size: clamp(0.76rem, 0.96vw, 0.96rem);
+  line-height: 1.58;
 }
 
-@media (max-width: 812px) {
+@media (min-width: 768px) and (max-width: 1180px) {
+  .about-capability-card {
+    font-size: clamp(0.78rem, 0.82vw, 0.9rem);
+  }
+
+  .about-capability-card-header-text {
+    font-size: 1.02em;
+  }
+
+  .about-capability-card-header-letter {
+    font-size: 2.12em;
+  }
+
+  .about-capability-card-copy {
+    font-size: clamp(0.74rem, 0.72vw, 0.82rem);
+    line-height: 1.48;
+  }
+
+  html[data-lang='zh'] .about-capability-card-copy {
+    font-size: clamp(0.74rem, 0.72vw, 0.82rem);
+    line-height: 1.54;
+  }
+}
+
+/* Lusion breakdown-style layout: 2 cards per row from 560px up. */
+@media (min-width: 560px) and (max-width: 900px) {
+  #about-capability-subheader {
+    position: relative;
+    top: 0;
+    right: auto;
+    width: 100%;
+    margin-top: 1.1em;
+    text-align: left;
+  }
+
+  #about-capability-subheader-text {
+    font-size: clamp(0.86rem, 1.55vw, 1rem);
+    text-align: left;
+  }
+
+  #about-capability-cards-wrapper {
+    margin-top: 2.8em;
+    margin-bottom: calc(var(--vh, 1vh) * 34);
+  }
+
+  #about-capability-cards {
+    perspective: 260vw;
+    height: auto !important;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.05em;
+  }
+
+  .about-capability-card {
+    position: relative;
+    width: 100%;
+    max-width: none;
+    left: auto !important;
+    top: auto !important;
+    font-size: clamp(0.74rem, 1.35vw, 0.86rem);
+  }
+
+  .about-capability-card-header-text {
+    font-size: 1em;
+  }
+
+  .about-capability-card-header-letter {
+    font-size: 2.05em;
+  }
+
+  .about-capability-card-copy {
+    font-size: clamp(0.72rem, 1.22vw, 0.8rem);
+    line-height: 1.5;
+  }
+
+  html[data-lang='zh'] .about-capability-card-copy {
+    font-size: clamp(0.72rem, 1.22vw, 0.8rem);
+    line-height: 1.56;
+  }
+}
+
+@media (max-width: 559px) {
   #about-capability {
     font-size: clamp(1rem, 1vw, 1.75rem);
   }
@@ -499,7 +580,7 @@ html[data-lang='zh'] .about-capability-card-copy {
        "EXPERTISE" past the screen edge (clipped, per feedback: 标题...要随
        屏幕自适应). Clamped so it scales fluidly with viewport width instead
        of just multiplying vw, and stays inside the safe text width at every
-       phone size from ~320px up to the 812px breakpoint ceiling. */
+       phone size from ~320px up to the 767px breakpoint ceiling. */
     font-size: clamp(2.1rem, 11.5vw, 3.6rem);
     margin-top: calc(var(--base-padding-y) * 1.4);
   }
@@ -539,12 +620,12 @@ html[data-lang='zh'] .about-capability-card-copy {
     position: relative;
     width: 100%;
     max-width: none;
-    font-size: clamp(1rem, 4.2vw, 1.35rem);
+    font-size: clamp(0.76rem, 2.05vw, 0.95rem);
     left: auto !important;
     top: auto !important;
     /* Was `transform: none !important` — that silently killed the JS-driven
        rotateY scroll-flip on mobile (HomeHeroTimeline's applyCardsFromSection
-       already computes a per-card rotateY for <=812px, it just never
+       already computes a per-card rotateY for <=767px, it just never
        rendered). Removed so each card flips from back → front as it scrolls
        into view, same interaction as desktop — per feedback: "这几张卡片的
        交互小屏幕里也要有翻动的效果". */
@@ -554,21 +635,21 @@ html[data-lang='zh'] .about-capability-card-copy {
      the card-back pattern mid-rotation instead of a blank gap. */
 
   .about-capability-card-header-text {
-    font-size: calc(1.15em + 2px);
+    font-size: 1.04em;
   }
 
   .about-capability-card-header-letter {
-    font-size: 2.6em;
+    font-size: 2.1em;
   }
 
   .about-capability-card-copy {
-    font-size: calc(clamp(0.88rem, 3.6vw, 1rem) + 2px);
-    line-height: 1.6;
+    font-size: clamp(0.72rem, 1.95vw, 0.82rem);
+    line-height: 1.52;
   }
 
   html[data-lang='zh'] .about-capability-card-copy {
-    font-size: calc(clamp(0.88rem, 3.6vw, 1rem) + 2px);
-    line-height: 1.6;
+    font-size: clamp(0.72rem, 1.95vw, 0.82rem);
+    line-height: 1.58;
   }
 }
 

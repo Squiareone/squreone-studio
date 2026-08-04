@@ -26,24 +26,15 @@
           <span id="intro-loader-fill" class="intro-loader-fill"></span>
         </div>
         <!--
-          SquareOne mark — a square outline that opens into the numeral "1"
-          in its own bottom-right corner, contained within the square's
-          footprint. Rounded joins/caps, see intro.css.
-
-          Drawn in two staged halves (matches the loading bar splitting in
-          the middle, product ask): -a is the top+right pair of sides
-          (the "two sides" that emerge from the bar first), -b is the
-          left+bottom pair plus the "1" (the sides that grow in after).
+          SquareOne mark — draw order is clockwise to match the reference:
+          top-left -> top-right -> right/bottom -> left -> back to top-left,
+          then the inner notch stroke.
         -->
         <div id="intro-fold-logo" class="intro-fold-logo" aria-hidden="true">
           <svg class="intro-fold-logo-svg" viewBox="0 0 132 132" xmlns="http://www.w3.org/2000/svg">
-            <path class="intro-fold-base" d="M28 24L98 24L98 74M28 24L28 98L72 98M92 74L92 98M84 80L92 74" />
-            <path id="intro-fold-progress-a" class="intro-fold-progress" d="M28 24L98 24L98 74" />
-            <path
-              id="intro-fold-progress-b"
-              class="intro-fold-progress"
-              d="M28 24L28 98L72 98M92 74L92 98M84 80L92 74"
-            />
+            <path class="intro-fold-base" d="M28 24L98 24L98 74L92 74L92 98L72 98L28 98L28 24M84 80L92 74" />
+            <path id="intro-fold-progress" class="intro-fold-progress" d="M28 24L98 24L98 74L92 74L92 98L72 98L28 98L28 24" />
+            <path id="intro-fold-progress-digit" class="intro-fold-progress" d="M92 74L92 98M92 74L84 80" />
           </svg>
         </div>
       </div>
@@ -126,6 +117,39 @@
                   </svg>
                 </div>
               </a>
+            </div>
+
+            <!-- Mobile-only rows (ref. lusion.co/about mobile menu: nav card,
+                 then a separate "LET'S TALK" card, then a separate dark card)
+                 — hidden on desktop where these actions already live in the
+                 persistent header bar; see the 767px media query. -->
+            <div id="header-menu-talk-wrap" class="header-menu-extra-card">
+              <a class="header-menu-link" href="#contact-section" data-target="#contact-section">
+                <div class="header-menu-link-inner">
+                  <span class="header-menu-link-label">
+                    <span class="header-menu-link-text">Let's talk</span>
+                    <span class="header-menu-link-text-clone" aria-hidden="true">Let's talk</span>
+                  </span>
+                  <svg class="header-menu-link-svg" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.343 8h11.314m0 0-4.984 4.984M13.657 8 8.673 3.016"></path>
+                  </svg>
+                </div>
+              </a>
+            </div>
+
+            <div id="header-menu-lang-wrap" class="header-menu-extra-card">
+              <button type="button" id="header-menu-lang-btn" class="header-menu-link" aria-label="Switch language">
+                <div class="header-menu-link-inner">
+                  <span class="header-menu-lang-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M12 2C6.47 2 2 6.48 2 12s4.47 10 10 10 10-4.48 10-10S17.53 2 12 2Zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.93 8ZM12 4.04c.83 1.2 1.5 2.53 1.96 3.96h-3.92A13.93 13.93 0 0 1 12 4.04ZM4.26 14A8.2 8.2 0 0 1 4 12c0-.69.09-1.35.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26Zm.81 2h2.95c.35 1.24.82 2.44 1.38 3.56A8.03 8.03 0 0 1 5.07 16ZM8.02 14c-.09-.65-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.96c.09.65.16 1.32.16 2 0 .68-.07 1.35-.16 2H8.02Zm3.98 5.96A13.93 13.93 0 0 1 10.04 16h3.92A13.93 13.93 0 0 1 12 19.96ZM14.6 19.56A15.65 15.65 0 0 0 15.98 16h2.95a8.03 8.03 0 0 1-4.33 3.56ZM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38a8.2 8.2 0 0 1 .26 2c0 .69-.09 1.35-.26 2h-3.38Z"></path>
+                    </svg>
+                  </span>
+                  <span class="header-menu-link-label">
+                    <span class="header-menu-link-text" id="header-menu-lang-btn-text">EN</span>
+                  </span>
+                </div>
+              </button>
             </div>
           </div>
         </div>

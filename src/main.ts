@@ -193,15 +193,20 @@ async function init(): Promise<void> {
 
   const langBtn = document.getElementById('header-right-lang-btn');
   const langBtnText = document.getElementById('header-right-lang-btn-text');
+  // Mobile-only duplicate row inside the dropdown (see index.html /
+  // .header-menu-extra-card) — kept in sync with the same toggle logic.
+  const menuLangBtn = document.getElementById('header-menu-lang-btn');
+  const menuLangBtnText = document.getElementById('header-menu-lang-btn-text');
 
   const syncLangButton = () => {
-    if (!langBtnText) return;
-    langBtnText.textContent = i18n.current === 'en' ? 'EN' : '中文';
+    const label = i18n.current === 'en' ? 'EN' : '中文';
+    if (langBtnText) langBtnText.textContent = label;
+    if (menuLangBtnText) menuLangBtnText.textContent = label;
   };
 
   syncLangButton();
 
-  langBtn?.addEventListener('click', (e) => {
+  const onLangToggle = (e: Event) => {
     e.preventDefault();
     e.stopPropagation();
     closeMenu();
@@ -217,7 +222,10 @@ async function init(): Promise<void> {
       { y: 0, opacity: 1, stagger: 0.04, duration: 0.7, ease: 'power3.out' },
     );
     ScrollTrigger.refresh();
-  });
+  };
+
+  langBtn?.addEventListener('click', onLangToggle);
+  menuLangBtn?.addEventListener('click', onLangToggle);
 
   (window as unknown as { __app: object }).__app = { engine, scroll, hero, i18n };
 }

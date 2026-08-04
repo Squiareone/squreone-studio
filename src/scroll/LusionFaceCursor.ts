@@ -260,7 +260,7 @@ export type LusionFaceCursorHandle = (() => void) & {
 export function bindLusionFaceCursor(opts: LusionFaceCursorOptions): LusionFaceCursorHandle {
   const domCursor = opts.el;
   const domCursorArrow = opts.arrowEl ?? null;
-  const isMobile = opts.isMobile ?? (() => window.innerWidth <= 812);
+  const isMobile = opts.isMobile ?? (() => window.innerWidth <= 767);
   const getFaceRect =
     opts.getFaceRect ??
     (() => ({

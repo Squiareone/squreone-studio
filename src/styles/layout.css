@@ -53,7 +53,7 @@ html[data-lang='zh'] .hero-image-label {
   opacity: 1;
 }
 
-@media (max-width: 812px) {
+@media (max-width: 767px) {
   /* No hover on touch — keep it out of the layout entirely on mobile. */
   .hero-image-label {
     display: none;
@@ -118,7 +118,7 @@ html[data-lang='zh'] .hero-image-label {
   /* debug: outline: 1px solid rgba(255,0,0,.2); */
 }
 
-@media (max-width: 812px) {
+@media (max-width: 767px) {
   #story-next-cursor-zone {
     /* Mobile has no face-cursor; zone unused */
     display: none;
@@ -170,7 +170,7 @@ html[data-lang='zh'] .hero-image-label {
 }
 
 /* Mobile: Lusion hides face-cursor; keep fixed center continue */
-@media (max-width: 812px) {
+@media (max-width: 767px) {
   #story-next-arrow {
     left: 50%;
     top: 64%;

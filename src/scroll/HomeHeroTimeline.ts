@@ -369,11 +369,11 @@ export function initStoryNextArrow(scrollTo: ScrollToFn): () => void {
         height: window.innerHeight,
       };
     },
-    isMobile: () => window.innerWidth <= 812,
+    isMobile: () => window.innerWidth <= 767,
   });
 
   const onDocClick = (e: MouseEvent) => {
-    if (!atLastFrame || jumping || window.innerWidth <= 812) return;
+    if (!atLastFrame || jumping || window.innerWidth <= 767) return;
     if (faceCursor.hitTest(e.clientX, e.clientY)) {
       e.preventDefault();
       jump();
@@ -405,7 +405,7 @@ export function initStoryNextArrow(scrollTo: ScrollToFn): () => void {
   window.addEventListener('wheel', onWheel, { passive: true });
 
   const onBtnClick = (e: Event) => {
-    if (window.innerWidth > 812) return;
+    if (window.innerWidth > 767) return;
     e.preventDefault();
     jump();
   };
@@ -451,6 +451,7 @@ export function initCapabilityTimeline(): () => void {
   }
 
   const NUMBER_OF_CARDS = cards.length;
+  const DESKTOP_FAN_MIN_WIDTH = 901;
   let titleTime = 0;
   let needsReset = true;
   let sectionActive = false;
@@ -610,7 +611,7 @@ export function initCapabilityTimeline(): () => void {
       first.getBoundingClientRect().height ||
       cardW * (438 / 314);
 
-    if (window.innerWidth > 812) {
+    if (window.innerWidth >= DESKTOP_FAN_MIN_WIDTH) {
       cardsEl.style.height = `${cardH}px`;
     } else {
       cardsEl.style.height = 'auto';
@@ -645,7 +646,7 @@ export function initCapabilityTimeline(): () => void {
     // ZH: single word "专业领域" on line1 only — all use the line1 y-entrance.
     const line1WordCount = line1.querySelectorAll('.cap-word').length || 2;
     words.forEach((u, f) => {
-      if (window.innerWidth <= 812) {
+      if (window.innerWidth <= 767) {
         u.style.transform = 'translate3d(0, 0, 0)';
         return;
       }
@@ -660,14 +661,14 @@ export function initCapabilityTimeline(): () => void {
     });
     getSubLines().forEach((u, f) => {
       const g = titleInView ? Math.min(1, Math.max(0, titleTime - f / 10 - 0.25)) : 0;
-      const v = window.innerWidth >= 812 ? easeExpoOut(g) : 1;
+      const v = window.innerWidth >= 768 ? easeExpoOut(g) : 1;
       u.style.transform = `translate3d(0, ${fit(v, 0, 1, 110, 0)}%, 0)`;
     });
   };
 
   const applyCardsFromSection = (dt: number) => {
     elapsed += dt;
-    const isDesktop = window.innerWidth > 812;
+    const isDesktop = window.innerWidth >= DESKTOP_FAN_MIN_WIDTH;
     // CRITICAL: use SECTION screenRatio like Lusion (t.screenRatio on domContainer)
     const screenRatio = getScreenRatio(section);
 

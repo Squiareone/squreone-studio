@@ -87,6 +87,14 @@ export class LanguageController {
       if (clone) clone.textContent = label;
     });
 
+    // Mobile-only "Let's talk" row duplicated inside the dropdown (see
+    // .header-menu-extra-card in index.html) — same copy as the desktop
+    // button, kept in sync here since it lives outside #header-menu-links.
+    const talkRowMain = document.querySelector('#header-menu-talk-wrap .header-menu-link-text');
+    const talkRowClone = document.querySelector('#header-menu-talk-wrap .header-menu-link-text-clone');
+    if (talkRowMain) talkRowMain.textContent = t.contact;
+    if (talkRowClone) talkRowClone.textContent = t.contact;
+
     const emailInput = document.getElementById('contact-email') as HTMLInputElement | null;
     if (emailInput) emailInput.placeholder = t.contactEmailPlaceholder;
     const submitBtn = document.getElementById('contact-submit');
