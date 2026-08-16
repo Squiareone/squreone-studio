@@ -59,7 +59,6 @@ export class LanguageController {
       'cases-desc': t.casesDesc,
       'lets-work-title': t.letsWorkTitle,
       'end-section-subtitle-text': t.letsWorkSubtitle,
-      'cases-screen-hint': t.casesEnterHint,
       'contact-label': t.contactLabel,
       'contact-heading': t.contactHeading,
       'contact-enquiry-label': t.contactEnquiryLabel,
@@ -113,6 +112,14 @@ export class LanguageController {
       const body = card.querySelector<HTMLElement>('.about-capability-card-copy');
       if (title) title.textContent = copy.title;
       if (body) body.textContent = copy.body;
+    });
+
+    // Full-bleed Experience story headlines — one per photo step, matched
+    // by data-step index back into t.casesExperienceSteps.
+    document.querySelectorAll<HTMLElement>('.cases-experience-headline').forEach((el) => {
+      const step = Number(el.dataset.step ?? -1);
+      const text = t.casesExperienceSteps[step];
+      if (text !== undefined) el.textContent = text;
     });
   }
 

@@ -16,6 +16,11 @@ export interface Copy {
   expertiseCards: { title: string; body: string }[];
   casesTitle: string;
   casesDesc: string;
+  /**
+   * Full-bleed "Experience" story sequence — 7 headlines, one per photo
+   * step (index 0 = concept sketch, deliberately empty/no headline).
+   */
+  casesExperienceSteps: string[];
   letsWorkTitle: string;
   letsWorkSubtitle: string;
   continueScroll: string;
@@ -31,7 +36,6 @@ export interface Copy {
   contactFooterCopy: string;
   contactFooterTagline: string;
   scrollHint: string;
-  casesEnterHint: string;
   langLabel: string;
   contact: string;
   menu: string;
@@ -77,6 +81,15 @@ export const copy: Record<Lang, Copy> = {
     casesTitle: "Cases & Scenarios",
     casesDesc:
       "Synchronized closely with your market positioning, our portfolio spans diverse physical touchpoints, ranging from high-utility brand merchandise and bespoke VIP gifts to turnkey exhibition curation for global summits.",
+    casesExperienceSteps: [
+      "",
+      "We design from sketch.",
+      "Massive production.",
+      "Bring objects to life for your brand.",
+      "Objects that carry your brand everywhere.",
+      "Gifts for your clients and employees.",
+      "Unique pieces for every exhibition.",
+    ],
     letsWorkTitle: "Let's work\ntogether!",
     letsWorkSubtitle: "Is Your Big Idea Ready to Go Wild?",
     continueScroll: "CONTINUE TO SCROLL",
@@ -93,7 +106,6 @@ export const copy: Record<Lang, Copy> = {
     contactFooterCopy: "© 2026 SquareOne. All rights reserved.",
     contactFooterTagline: "Designed with care.",
     scrollHint: "Scroll to explore",
-    casesEnterHint: "Hover or click to enter",
     langLabel: "Language",
     contact: "Let's talk",
     menu: "Menu",
@@ -138,6 +150,15 @@ export const copy: Record<Lang, Copy> = {
     casesTitle: "案例与场景",
     casesDesc:
       "紧贴你的市场定位，作品覆盖多样实体触点——从高实用品牌周边、定制 VIP 礼赠，到全球峰会的一站式展览策划。",
+    casesExperienceSteps: [
+      "",
+      "从一张手稿，开始设计。",
+      "规模化量产。",
+      "把周边产品带到你的品牌里。",
+      "为企业设计物件，放大品牌效应。",
+      "为企业客户和员工设计难忘的礼品。",
+      "为展会打造独特周边产品。",
+    ],
     letsWorkTitle: "合作，从这里开始",
     letsWorkSubtitle: "让你的创意，野蛮生长",
     continueScroll: "继续向下滚动",
@@ -154,7 +175,6 @@ export const copy: Record<Lang, Copy> = {
     contactFooterCopy: "© 2026 大方. 保留所有权利。",
     contactFooterTagline: "用心设计。",
     scrollHint: "向下滚动",
-    casesEnterHint: "悬停或点击进入",
     langLabel: "语言",
     contact: "联系我们",
     menu: "菜单",

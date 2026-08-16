@@ -38,7 +38,7 @@ async function init(): Promise<void> {
   prepareHeroText(i18n, i18n);
 
   const engine = new Engine({ canvas });
-  const hero = new AboutHero(engine);
+  const hero = new AboutHero(engine, () => i18n.current);
   engine.start();
 
   // Lenis before ScrollTriggers so pin/scroll stay in sync

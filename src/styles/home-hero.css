@@ -682,7 +682,7 @@ html[data-lang='zh'] .about-capability-card-copy {
   opacity: 1;
 }
 
-#cases-frame-video {
+#cases-frame-experience {
   pointer-events: auto;
 }
 
@@ -719,113 +719,137 @@ html[data-lang='zh'] .about-capability-card-copy {
   will-change: transform, opacity;
 }
 
-#cases-frame-video {
-  display: grid;
-  place-items: center;
-}
-
-.cases-screen {
-  position: relative;
-  width: min(820px, 86vw);
-  aspect-ratio: 16 / 9;
-  border: none;
+#cases-frame-experience {
   padding: 0;
-  border-radius: 16px;
-  overflow: hidden;
-  cursor: pointer;
-  color: inherit;
-  font: inherit;
-  background:
-    radial-gradient(120% 80% at 60% 30%, rgba(54, 66, 245, 0.4), transparent 55%),
-    linear-gradient(160deg, #1a1f34, #0b0f19 65%, #080b12);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transform-origin: center center;
-  will-change: transform, opacity, border-radius;
-  transition: box-shadow 0.35s ease;
 }
 
-.cases-screen:hover,
-.cases-screen.is-hovered {
-  box-shadow: 0 28px 70px rgba(26, 47, 251, 0.28);
-}
-
-.cases-screen.is-playing {
-  cursor: default;
-}
-
-.cases-screen.is-expanded {
-  width: min(1100px, 94vw);
-  border-radius: 10px;
-}
-
-.cases-screen-visual {
+/*
+ * Full-bleed "Experience" story sequence — no device chrome, the photo
+ * fills the entire pinned frame with the headline set directly on top
+ * (ref: full-screen hero video + overlaid display type). Playback is
+ * scroll-driven (see initCasesTimeline): each of the 7 photos + its
+ * headline owns an equal slice of the frame's scroll window.
+ */
+.cases-experience-stage {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 30% 40%, rgba(136, 50, 247, 0.35), transparent 42%),
-    radial-gradient(circle at 70% 60%, rgba(26, 47, 251, 0.45), transparent 48%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 40%);
-  animation: cases-visual-drift 10s ease-in-out infinite alternate;
+  overflow: hidden;
+  background: #060608;
 }
 
-@keyframes cases-visual-drift {
+.cases-experience-frame-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.04);
+  transition: opacity 1.1s ease;
+  will-change: opacity, transform;
+}
+
+.cases-experience-frame-img.is-active {
+  opacity: 1;
+  /* Slow Ken Burns drift while a frame is on screen — restarted per-step in JS. */
+  animation: cases-experience-kenburns 3.6s ease-out forwards;
+}
+
+@keyframes cases-experience-kenburns {
   from {
-    transform: scale(1) translate(0, 0);
+    transform: scale(1.08);
   }
   to {
-    transform: scale(1.08) translate(-2%, 2%);
+    transform: scale(1);
   }
 }
 
-.cases-screen-overlay {
+.cases-experience-progress {
   position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  z-index: 2;
-  transition: opacity 0.35s ease;
-}
-
-.cases-screen.is-playing .cases-screen-overlay {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.cases-screen-hint {
-  font-family: var(--font-mono);
-  font-size: clamp(0.8rem, 1vw, 1.05rem);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(240, 241, 250, 0.82);
-  padding: 0.75em 1.2em;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(6px);
-}
-
-.cases-screen-progress {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.12);
+  top: var(--base-padding-y);
+  left: var(--base-padding-x);
+  right: var(--base-padding-x);
   z-index: 3;
-  opacity: 0;
-  transition: opacity 0.25s ease;
+  display: flex;
+  gap: 6px;
 }
 
-.cases-screen.is-playing .cases-screen-progress {
-  opacity: 1;
+.cases-experience-progress-seg {
+  flex: 1 1 0;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
 }
 
-.cases-screen-progress-bar {
+.cases-experience-progress-seg i {
+  display: block;
   height: 100%;
   width: 0%;
   background: var(--color-white);
-  transform-origin: left center;
+  border-radius: inherit;
+}
+
+/* Even scrim (not just bottom-weighted) so centered headline text stays
+   legible over any photo, bright or dark. */
+.cases-experience-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    rgba(4, 5, 8, 0.5) 0%,
+    rgba(4, 5, 8, 0.32) 38%,
+    rgba(4, 5, 8, 0.4) 62%,
+    rgba(4, 5, 8, 0.58) 100%
+  );
+  pointer-events: none;
+}
+
+.cases-experience-headlines {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.cases-experience-headline {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--base-padding-x);
+  /* vw-scaled so a full sentence keeps a roughly constant line length
+     relative to the viewport and stays on one line without measuring. */
+  font-size: clamp(1.5rem, 3.1vw, 3.2rem);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  color: var(--color-white);
+  text-align: center;
+  white-space: nowrap;
+  text-shadow: 0 2px 28px rgba(0, 0, 0, 0.6), 0 1px 6px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  will-change: opacity, transform;
+}
+
+.cases-experience-headline.is-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 767px) {
+  .cases-experience-headline {
+    /* Phones can't fit a full sentence on one line at a readable size —
+       allow wrap here rather than shrinking text past legibility. */
+    white-space: normal;
+    max-width: 26ch;
+    margin: 0 auto;
+    font-size: clamp(1.3rem, 5.6vw, 2rem);
+  }
 }
 
 /* ===== Lusion EndSection port: Let's work together ===== */
@@ -1121,16 +1145,11 @@ html[data-lang='zh'] .about-capability-card-copy {
 
 html[data-lang='zh'] .cases-title,
 html[data-lang='zh'] .cases-desc,
+html[data-lang='zh'] .cases-experience-headline,
 html[data-lang='zh'] .end-section-title-link,
 html[data-lang='zh'] .end-section-subtitle,
-html[data-lang='zh'] .cases-screen-hint,
 html[data-lang='zh'] .end-bottom-text {
   font-family: 'Noto Sans SC', var(--font-sans);
-}
-
-html[data-lang='zh'] .cases-screen-hint {
-  text-transform: none;
-  letter-spacing: 0.06em;
 }
 
 html[data-lang='zh'] .end-section-subtitle {

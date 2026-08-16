@@ -805,13 +805,19 @@ export function initCasesTimeline(): () => void {
   const section = document.getElementById('cases-scenarios');
   const track = document.getElementById('cases-track');
   const intro = document.getElementById('cases-frame-intro');
-  const videoFrame = document.getElementById('cases-frame-video');
+  const experienceFrame = document.getElementById('cases-frame-experience');
+  const experienceImgs = Array.from(
+    document.querySelectorAll<HTMLImageElement>('.cases-experience-frame-img'),
+  ).sort((a, b) => Number(a.dataset.step ?? 0) - Number(b.dataset.step ?? 0));
+  const progressSegs = Array.from(
+    document.querySelectorAll<HTMLElement>('.cases-experience-progress-seg > i'),
+  );
+  const headlineEls = Array.from(
+    document.querySelectorAll<HTMLElement>('.cases-experience-headline'),
+  ).sort((a, b) => Number(a.dataset.step ?? 0) - Number(b.dataset.step ?? 0));
   const finale = document.getElementById('cases-frame-finale');
   const title = document.getElementById('cases-title');
   const desc = document.getElementById('cases-desc');
-  const screen = document.getElementById('cases-screen') as HTMLButtonElement | null;
-  const progressBar = document.getElementById('cases-screen-progress-bar');
-  const hint = document.getElementById('cases-screen-hint');
   const letsWork = document.getElementById('lets-work-title');
   const endTitle = document.getElementById('end-section-title');
   const endContent = document.getElementById('end-section-content');
@@ -823,12 +829,13 @@ export function initCasesTimeline(): () => void {
     !section ||
     !track ||
     !intro ||
-    !videoFrame ||
+    !experienceFrame ||
+    !experienceImgs.length ||
+    !progressSegs.length ||
+    !headlineEls.length ||
     !finale ||
     !title ||
     !desc ||
-    !screen ||
-    !progressBar ||
     !letsWork ||
     !endTitle ||
     !endContent ||
@@ -861,15 +868,11 @@ export function initCasesTimeline(): () => void {
   );
 
   gsap.set(intro, { autoAlpha: 1 });
-  gsap.set([videoFrame, finale], { autoAlpha: 0 });
+  gsap.set([experienceFrame, finale], { autoAlpha: 0 });
   gsap.set(title, { x: -200, autoAlpha: 0 });
   gsap.set(desc, { x: 220, autoAlpha: 0 });
-  gsap.set(screen, { scale: 0.88, autoAlpha: 0.7 });
   gsap.set(endBottom, { autoAlpha: 0, y: 12 });
 
-  let playTween: gsap.core.Tween | null = null;
-  let hasPlayed = false;
-  let videoPhase = false;
   let finaleActive = false;
 
   // EndSection state
@@ -1168,42 +1171,6 @@ export function initCasesTimeline(): () => void {
     gsap.to(endBottom, { autoAlpha: 1, y: 0, duration: 0.55, delay: 0.55, ease: 'power3.out' });
   };
 
-  const enterVideo = () => {
-    if (!videoPhase || hasPlayed || playTween) return;
-    hasPlayed = true;
-    screen.classList.add('is-playing', 'is-expanded');
-    if (hint) hint.textContent = '';
-
-    gsap.to(screen, {
-      scale: 1.08,
-      width: 'min(1100px, 94vw)',
-      borderRadius: 10,
-      duration: 0.7,
-      ease: 'power3.out',
-    });
-
-    playTween = gsap.to(progressBar, {
-      width: '100%',
-      duration: 4.2,
-      ease: 'none',
-      onComplete: () => {
-        gsap.to(screen, {
-          scale: 1.2,
-          autoAlpha: 0,
-          duration: 0.55,
-          ease: 'power2.in',
-        });
-        gsap.to(videoFrame, { autoAlpha: 0, duration: 0.4, delay: 0.25 });
-        gsap.to(finale, {
-          autoAlpha: 1,
-          duration: 0.35,
-          delay: 0.3,
-          onStart: () => activateFinale(),
-        });
-      },
-    });
-  };
-
   // Pre-split so first paint of finale is ready
   splitEndText();
   resetEndAnim();
@@ -1241,6 +1208,109 @@ export function initCasesTimeline(): () => void {
   const onLangChange = () => resplitFromLang();
   window.addEventListener('app:langchange', onLangChange);
 
+  // Experience window: the device-frame story sequence is visible across tl
+  // progress [0.4, 0.82), then crossfades into the finale. Each of the 7
+  // photos owns an equal slice of that window — no click/hover gate, it
+  // plays purely off scroll position, like scrubbing a video timeline.
+  const EXPERIENCE_IN = 0.4;
+  const EXPERIENCE_OUT = 0.82;
+  const STEP_COUNT = experienceImgs.length;
+  const STEP_SIZE = (EXPERIENCE_OUT - EXPERIENCE_IN) / STEP_COUNT;
+  let activeStep = -1;
+  // True while tl's scroll progress sits inside the story window — gates
+  // both the scroll-driven step math and the idle-autoplay loop below.
+  let experienceActive = false;
+
+  const applyStepClasses = (idx: number) => {
+    experienceImgs.forEach((img, i) => img.classList.toggle('is-active', i === idx));
+    headlineEls.forEach((el, i) => el.classList.toggle('is-active', i === idx));
+  };
+
+  const updateExperienceStep = (progress: number) => {
+    const raw = fit(progress, EXPERIENCE_IN, EXPERIENCE_OUT, 0, STEP_COUNT);
+    const idx = Math.min(STEP_COUNT - 1, Math.max(0, Math.floor(raw)));
+    const within = Math.min(1, Math.max(0, raw - idx));
+
+    if (idx !== activeStep) {
+      activeStep = idx;
+      applyStepClasses(idx);
+      autoplayStepStart = performance.now();
+    }
+
+    progressSegs.forEach((seg, i) => {
+      const fillPct = i < idx ? 100 : i === idx ? within * 100 : 0;
+      seg.style.width = `${fillPct}%`;
+    });
+  };
+
+  const resetExperienceStep = () => {
+    if (activeStep === -1) return;
+    activeStep = -1;
+    applyStepClasses(0);
+    progressSegs.forEach((seg) => {
+      seg.style.width = '0%';
+    });
+  };
+
+  // Idle autoplay: once the story frame is on screen and the visitor hasn't
+  // scrolled/touched/pressed a key for a beat, keep the pages advancing on
+  // their own — looping back to step 0 after the last one — so the story
+  // reads even if nobody scrolls. Any real scroll/touch/key input hands
+  // control straight back to the scrollbar-driven position.
+  const AUTOPLAY_IDLE_DELAY = 1200;
+  const AUTOPLAY_STEP_DURATION = 3400;
+  let lastInputAt = 0;
+  let autoplayStepStart = 0;
+  let autoplayRAF = 0;
+
+  const markInput = () => {
+    lastInputAt = performance.now();
+  };
+  // wheel/touch input itself is marked by the pagination handlers below
+  // (they need to run first to intercept the event); keydown has no
+  // dedicated handler, so it just marks input directly.
+  window.addEventListener('keydown', markInput);
+
+  const autoplayTick = (now: number) => {
+    autoplayRAF = requestAnimationFrame(autoplayTick);
+
+    if (!experienceActive || activeStep === -1) {
+      autoplayStepStart = now;
+      return;
+    }
+
+    const idle = now - lastInputAt;
+    if (idle < AUTOPLAY_IDLE_DELAY) {
+      autoplayStepStart = now;
+      return;
+    }
+
+    const elapsed = now - autoplayStepStart;
+    const seg = progressSegs[activeStep];
+    if (seg) seg.style.width = `${Math.min(100, (elapsed / AUTOPLAY_STEP_DURATION) * 100)}%`;
+
+    if (elapsed >= AUTOPLAY_STEP_DURATION) {
+      const next = (activeStep + 1) % STEP_COUNT;
+      activeStep = next;
+      applyStepClasses(next);
+      progressSegs.forEach((s, i) => {
+        s.style.width = next === 0 ? '0%' : i < next ? '100%' : '0%';
+      });
+      autoplayStepStart = now;
+    }
+  };
+  autoplayRAF = requestAnimationFrame(autoplayTick);
+
+  // Snap only inside the story window: each scroll gesture settles on the
+  // nearest whole page instead of leaving the crossfade mid-flight. Outside
+  // that window (title reveal, finale) progress stays freely scrubbed.
+  const snapExperienceStep = (value: number): number => {
+    if (value <= EXPERIENCE_IN || value >= EXPERIENCE_OUT) return value;
+    const rel = (value - EXPERIENCE_IN) / STEP_SIZE;
+    const idx = Math.min(STEP_COUNT - 1, Math.max(0, Math.round(rel)));
+    return EXPERIENCE_IN + idx * STEP_SIZE;
+  };
+
   const tl = gsap.timeline({
     scrollTrigger: {
       trigger: section,
@@ -1251,11 +1321,98 @@ export function initCasesTimeline(): () => void {
       pinSpacing: true,
       anticipatePin: 1,
       invalidateOnRefresh: true,
+      snap: {
+        snapTo: snapExperienceStep,
+        duration: { min: 0.2, max: 0.6 },
+        ease: 'power1.inOut',
+      },
       onUpdate: (self) => {
-        videoPhase = self.progress >= 0.38 && self.progress < 0.78 && !hasPlayed;
+        const inExperience = self.progress >= EXPERIENCE_IN && self.progress < EXPERIENCE_OUT;
+        experienceActive = inExperience;
+        experienceFrame.classList.toggle('is-playing', inExperience);
+        if (inExperience) {
+          updateExperienceStep(self.progress);
+        } else if (self.progress < EXPERIENCE_IN) {
+          resetExperienceStep();
+        }
       },
     },
   });
+
+  // One-step-per-gesture pagination inside the story window: wheel/touch
+  // input is intercepted and always moves exactly one page, then locks out
+  // further input for a beat so a single fast flick or trackpad swipe can't
+  // blow through several pages at once. At the first/last page, input is
+  // left alone so the visitor can keep scrolling into the intro or finale.
+  const st = tl.scrollTrigger!;
+  const WHEEL_COOLDOWN = 850;
+  const TOUCH_THRESHOLD = 36;
+  let paginateLocked = false;
+  let paginateLockTimer = 0;
+  let touchStartY = 0;
+  let touchHandled = false;
+
+  const stepProgress = (idx: number) => EXPERIENCE_IN + idx * STEP_SIZE;
+
+  const goToStep = (idx: number) => {
+    const clamped = Math.min(STEP_COUNT - 1, Math.max(0, idx));
+    const targetScroll = st.start + (st.end - st.start) * stepProgress(clamped);
+    const proxy = { v: st.scroll() };
+    gsap.to(proxy, {
+      v: targetScroll,
+      duration: 0.7,
+      ease: 'power2.inOut',
+      onUpdate: () => st.scroll(proxy.v),
+    });
+  };
+
+  const lockPaginate = () => {
+    paginateLocked = true;
+    window.clearTimeout(paginateLockTimer);
+    paginateLockTimer = window.setTimeout(() => {
+      paginateLocked = false;
+    }, WHEEL_COOLDOWN);
+  };
+
+  const onWheel = (e: WheelEvent) => {
+    markInput();
+    if (!experienceActive) return;
+    const dir = e.deltaY > 0 ? 1 : -1;
+    if (activeStep === 0 && dir < 0) return; // let the scroll continue back into the intro
+    if (activeStep === STEP_COUNT - 1 && dir > 0) return; // let the scroll continue on into the finale
+    e.preventDefault();
+    if (paginateLocked) return;
+    lockPaginate();
+    goToStep(activeStep + dir);
+  };
+
+  const onTouchStart = (e: TouchEvent) => {
+    markInput();
+    touchStartY = e.touches[0]?.clientY ?? 0;
+    touchHandled = false;
+  };
+
+  const onTouchMove = (e: TouchEvent) => {
+    markInput();
+    if (!experienceActive || touchHandled || paginateLocked) return;
+    const y = e.touches[0]?.clientY ?? touchStartY;
+    const delta = touchStartY - y; // positive = finger dragged up = scrolling down
+    const dir = delta > 0 ? 1 : -1;
+    if (activeStep === 0 && dir < 0) return;
+    if (activeStep === STEP_COUNT - 1 && dir > 0) return;
+    if (Math.abs(delta) < TOUCH_THRESHOLD) {
+      e.preventDefault();
+      return;
+    }
+    e.preventDefault();
+    touchHandled = true;
+    lockPaginate();
+    goToStep(activeStep + dir);
+  };
+
+  window.addEventListener('wheel', onWheel, { passive: false });
+  window.addEventListener('touchstart', onTouchStart, { passive: true });
+  window.addEventListener('touchmove', onTouchMove, { passive: false });
 
   tl.to(title, { x: 0, autoAlpha: 1, duration: 0.35, ease: 'power3.out' }, 0.02);
   tl.to(desc, { x: 0, autoAlpha: 1, duration: 0.35, ease: 'power3.out' }, 0.08);
@@ -1263,54 +1420,33 @@ export function initCasesTimeline(): () => void {
   tl.to(title, { x: -160, autoAlpha: 0, duration: 0.28, ease: 'power2.in' }, 0.32);
   tl.to(desc, { x: 180, autoAlpha: 0, duration: 0.28, ease: 'power2.in' }, 0.34);
   tl.to(intro, { autoAlpha: 0, duration: 0.12 }, 0.4);
-  tl.to(videoFrame, { autoAlpha: 1, duration: 0.14 }, 0.4);
-  tl.to(screen, { scale: 1, autoAlpha: 1, duration: 0.35, ease: 'power3.out' }, 0.42);
+  tl.to(experienceFrame, { autoAlpha: 1, duration: 0.14 }, 0.4);
 
-  tl.to(screen, { scale: 1.02, duration: 0.25, ease: 'sine.inOut' }, 0.7);
-  tl.to({}, { duration: 0.2 }, 0.95);
+  tl.to({}, { duration: 0.28 }, 0.44); // hold — story sequence plays through this range
 
-  const onEnter = () => {
-    if (!videoPhase || hasPlayed) return;
-    screen.classList.add('is-hovered');
-    gsap.to(screen, { scale: 1.04, duration: 0.35, ease: 'power2.out' });
-  };
-  const onLeave = () => {
-    if (hasPlayed) return;
-    screen.classList.remove('is-hovered');
-    if (videoPhase) gsap.to(screen, { scale: 1, duration: 0.35, ease: 'power2.out' });
-  };
-
-  let hoverTimer: number | null = null;
-  const onPointerEnter = () => {
-    onEnter();
-    if (!videoPhase || hasPlayed) return;
-    if (hoverTimer) window.clearTimeout(hoverTimer);
-    hoverTimer = window.setTimeout(() => {
-      if (videoPhase && !hasPlayed && screen.matches(':hover')) enterVideo();
-    }, 380);
-  };
-  const onPointerLeave = () => {
-    if (hoverTimer) {
-      window.clearTimeout(hoverTimer);
-      hoverTimer = null;
-    }
-    onLeave();
-  };
-
-  screen.addEventListener('pointerenter', onPointerEnter);
-  screen.addEventListener('pointerleave', onPointerLeave);
-  screen.addEventListener('click', enterVideo);
+  tl.to(experienceFrame, { autoAlpha: 0, duration: 0.14 }, 0.8);
+  tl.to(
+    finale,
+    {
+      autoAlpha: 1,
+      duration: 0.2,
+      onStart: () => activateFinale(),
+    },
+    0.82,
+  );
+  tl.to({}, { duration: 0.13 }, 0.95);
 
   return () => {
     tl.scrollTrigger?.kill();
     tl.kill();
-    playTween?.kill();
     gsap.ticker.remove(ticker);
+    cancelAnimationFrame(autoplayRAF);
+    window.clearTimeout(paginateLockTimer);
+    window.removeEventListener('wheel', onWheel);
+    window.removeEventListener('touchstart', onTouchStart);
+    window.removeEventListener('touchmove', onTouchMove);
+    window.removeEventListener('keydown', markInput);
     window.removeEventListener('app:langchange', onLangChange);
-    if (hoverTimer) window.clearTimeout(hoverTimer);
-    screen.removeEventListener('pointerenter', onPointerEnter);
-    screen.removeEventListener('pointerleave', onPointerLeave);
-    screen.removeEventListener('click', enterVideo);
     endTitle.removeEventListener('mouseenter', onTitleEnter);
     endTitle.removeEventListener('mouseleave', onTitleLeave);
   };
