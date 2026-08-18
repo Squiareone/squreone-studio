@@ -456,25 +456,47 @@ html[data-lang='zh'] .story-detail-text {
   justify-content: space-between;
   align-items: center;
   flex: 0 0 auto;
-  /* Header-to-list gap is now 3.375em total: the 1.35em shared gap above
-     plus this extra 2.025em, so it grows without dragging the list-to-
-     footer spacing along with it. */
-  margin-bottom: 2.025em;
+  /* No fixed margin here at the 4-per-row (>900px) tier — the list below
+     now centers itself vertically between header and footer via auto
+     margins, so a fixed offset here would just make that centering
+     lopsided. 2-column/1-column tiers restore the old fixed-gap (non-
+     centered) behavior further down, since this ask was specific to the
+     desktop 4-up card. */
+  margin-bottom: 0;
 }
 
 .about-capability-card-header-text {
   margin: 0;
-  /* +4pt on top of the existing responsive clamp. */
-  font-size: calc(clamp(1rem, 1.08vw, 1.18rem) + 4pt);
+  /* 4-per-row tier, narrow sub-range (901-1079px): back to a fluid clamp
+     (9-12pt) instead of the flat 10pt this used to be — flat was still
+     truncating the longer titles ("BRAND ACTIVATION", "TURNKEY DELIVERY")
+     with the ellipsis safety net below, per feedback: "标题字体大小自适应
+     展示齐全". The 1080-1600px range restores the original 12-22pt fluid
+     clamp (see the min-width: 1080px override below). */
+  font-size: clamp(9pt, calc(-6.19pt + 1.69vw), 12pt);
   font-weight: 500;
   color: var(--color-black);
   text-transform: uppercase;
+  /* Safety net: truncate with an ellipsis rather than wrap to a second
+     line if a title is ever tight for room — a wrapped title is what
+     threw the bullet list out of alignment before. */
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .about-capability-card-header-letter {
   position: relative;
   left: 0.15em;
-  font-size: clamp(2.05rem, 2.48vw, 2.86rem);
+  flex: 0 0 auto;
+  /* 4-per-row tier, narrow sub-range (901-1079px): the letter shrinks too
+     (12-16pt) so it stops crowding out the title's available width — same
+     "adaptive, always shows in full" ask covers the letter too. The
+     1080-1600px range restores the original larger rem-based size (see
+     the min-width: 1080px override below). */
+  font-size: clamp(12pt, calc(-8.25pt + 2.25vw), 16pt);
   font-family: var(--font-mono);
   margin: 0;
   color: var(--color-black);
@@ -489,7 +511,13 @@ html[data-lang='zh'] .story-detail-text {
    to item 1, and between each item) the same size; any leftover height
    just falls empty below the last item instead of getting distributed. */
 .about-capability-card-list {
-  margin: 0;
+  /* Auto top/bottom margins center this whole list block in the leftover
+     space between the header and the footer at the 4-per-row (>900px)
+     tier — front's own gap still sets a minimum floor on each side, and
+     the leftover splits evenly above/below since these are the only
+     auto margins on that axis. 2-col/1-col tiers cancel this back to 0
+     further down to keep their existing footer-pinned-to-bottom layout. */
+  margin: auto 0;
   padding: 0;
   list-style: none;
   flex: 0 1 auto;
@@ -508,7 +536,11 @@ html[data-lang='zh'] .story-detail-text {
 .about-capability-card-list li {
   margin: 0;
   padding-bottom: 1.05em;
-  font-size: clamp(0.84rem, 1.05vw, 1.05rem);
+  /* 4-per-row tier, narrow sub-range (901-1079px): 8pt at 901px up to
+     ~11pt at 1079px (matches the unchanged 1080-1600px curve's own value
+     at that edge, so the two ranges meet cleanly). ZH keeps its own
+     unified 9-17pt rule further down, untouched by this split. */
+  font-size: clamp(8pt, calc(-7.19pt + 1.69vw), 11pt);
   line-height: 1.3;
   color: #444444;
   letter-spacing: -0.01em;
@@ -530,14 +562,18 @@ html[data-lang='zh'] .story-detail-text {
 }
 
 /* Mirrored footer duplicate (mark + title, flipped 180deg) — matches the
-   reference card's bottom-left flourish. Decorative only (aria-hidden),
-   pinned to the bottom of the front face; any leftover height above it
-   from .about-capability-card-list no longer stretching to fill the card
-   (see justify-content: flex-start above) ends up between the list and
-   this footer instead of being empty dead space. */
+   reference card's bottom-left flourish. Decorative only (aria-hidden).
+   At the 4-per-row (>900px) tier the list above now owns the auto-margin
+   centering, so this no longer needs its own margin-top: auto — it just
+   follows the list with the front's normal gap and lands at the bottom
+   naturally. 2-col/1-col tiers restore margin-top: auto below to keep
+   pinning it to the very bottom of the card as before. */
 .about-capability-card-footer {
-  margin-top: auto;
-  display: flex;
+  margin-top: 0;
+  /* Hidden by default now — this is the narrow 901-1079px sub-range's
+     default (mirrored footer removed there to save vertical room). The
+     1080-1600px override below turns it back on. */
+  display: none;
   align-items: center;
   gap: 0.5em;
   transform: rotate(180deg);
@@ -554,7 +590,8 @@ html[data-lang='zh'] .story-detail-text {
 
 .about-capability-card-footer-title {
   margin: 0;
-  font-size: clamp(1rem, 1.08vw, 1.18rem);
+  /* Same size as the header title at this (4-per-row) tier. */
+  font-size: clamp(12pt, calc(-0.89pt + 1.43vw), 22pt);
   font-weight: 500;
   color: var(--color-black);
   text-transform: uppercase;
@@ -563,6 +600,7 @@ html[data-lang='zh'] .story-detail-text {
 
 html[data-lang='zh'] .about-capability-card-footer-title {
   font-family: 'Noto Sans SC', var(--font-sans);
+  font-size: clamp(14pt, calc(1.11pt + 1.43vw), 24pt);
 }
 
 html[data-lang='zh'] .about-capability-card-header-text,
@@ -570,47 +608,54 @@ html[data-lang='zh'] #about-capability-subheader {
   font-family: 'Noto Sans SC', var(--font-sans);
 }
 
-/* ZH title gets +2pt on top of the shared +4pt EN already has (+6pt total)
-   — EN itself stays at the shared base rule's +4pt. */
+/* ZH title: 14-24pt over the 901-1600px range (EN is 12-22pt). */
 html[data-lang='zh'] .about-capability-card-header-text {
-  font-size: calc(clamp(1rem, 1.08vw, 1.18rem) + 6pt);
+  font-size: clamp(14pt, calc(1.11pt + 1.43vw), 24pt);
 }
 
 html[data-lang='zh'] .about-capability-card-list li {
   font-family: 'Noto Sans SC', var(--font-sans);
-  font-size: clamp(0.8rem, 1vw, 1rem);
+  font-size: clamp(9pt, calc(-1.31pt + 1.14vw), 17pt);
   line-height: 1.4;
 }
 
-@media (min-width: 768px) and (max-width: 1180px) {
-  .about-capability-card {
-    font-size: clamp(0.78rem, 0.82vw, 0.9rem);
-  }
-
+/* 4-per-row tier, wide sub-range (1080-1600px+): restores the original
+   fluid EN title/body clamps and the mirrored footer, undoing the
+   901-1079px narrow-range simplification above. ZH is untouched — it
+   never had a narrow-range override, so it already spans 901-1600px
+   uniformly. */
+@media (min-width: 1080px) {
   .about-capability-card-header-text {
-    font-size: calc(1.02em + 4pt);
-  }
-
-  html[data-lang='zh'] .about-capability-card-header-text {
-    font-size: calc(1.02em + 6pt);
+    font-size: clamp(12pt, calc(-0.89pt + 1.43vw), 22pt);
   }
 
   .about-capability-card-header-letter {
-    font-size: 2.12em;
+    font-size: clamp(2.05rem, 2.48vw, 2.86rem);
   }
 
   .about-capability-card-list li {
-    font-size: clamp(0.78rem, 0.76vw, 0.86rem);
-    line-height: 1.28;
+    font-size: clamp(9pt, calc(-1.31pt + 1.14vw), 17pt);
   }
 
-  html[data-lang='zh'] .about-capability-card-list li {
-    font-size: clamp(0.78rem, 0.76vw, 0.86rem);
-    line-height: 1.36;
+  .about-capability-card-footer {
+    display: flex;
+    /* row-reverse puts the title first (left) and the letter second
+       (right) pre-rotation, which the footer's rotate(180deg) then swaps —
+       landing the letter on the left and the title on the right once
+       viewed right-side-up, mirroring the header's own letter-on-right
+       layout. Same technique already used on the 2-per-row and 1-per-row
+       tiers. */
+    flex-direction: row-reverse;
   }
 }
 
-/* Lusion breakdown-style layout: 2 cards per row from 560px up. */
+/* Lusion breakdown-style layout: 2 cards per row from 560px up.
+   (Tried extending this up through 1180px to dodge the 4-column title-
+   wrap issue at that width, but the 768-1180px range still needs the
+   JS-driven absolute-position fan layout — switching it to a plain grid
+   mid-range broke that positioning instead. Back to 900px; the 4-column
+   range now just shrinks its font more aggressively — see the
+   768-1180px block below — instead of changing layout systems.) */
 @media (min-width: 560px) and (max-width: 900px) {
   #about-capability-subheader {
     position: relative;
@@ -648,28 +693,141 @@ html[data-lang='zh'] .about-capability-card-list li {
     font-size: clamp(0.74rem, 1.35vw, 0.86rem);
   }
 
+  /* Title: EN lowered to a 10-28pt range (was 18-28pt) — 18pt was still
+     wrapping "BRAND ACTIVATION"/"TURNKEY DELIVERY" to 2 lines at the
+     narrow end, per feedback: "英文下标题一行展示完整，字体大小随响应式
+     减小". CN stays 20-30pt (much shorter strings, not at risk). */
   .about-capability-card-header-text {
-    font-size: calc(1em + 4pt);
+    font-size: clamp(10pt, calc(-19.65pt + 5.29vw), 28pt);
   }
 
   html[data-lang='zh'] .about-capability-card-header-text {
-    font-size: calc(1em + 6pt);
+    font-size: clamp(20pt, calc(3.53pt + 2.94vw), 30pt);
   }
 
   .about-capability-card-header-letter {
     font-size: 2.05em;
   }
 
+  /* Cards are noticeably wider here (2-up instead of 4-up) — spacing
+     bumped up from the 4-column base values to match, same idea as the
+     reference site's own 2-up layout. Header/list gaps switched from em
+     (which tracked the small ambient card font, not the title/content's
+     own much bigger pt sizes above) to their own pt-based clamp so they
+     scale in proportion to the new text size instead of going tight. */
+  .about-capability-card-front {
+    gap: 1.6em;
+    /* Title-to-card-top spacing is 2.5x the shared base padding-top
+       (1.15em -> 2.875em); left/right content-to-card-edge spacing is 2x
+       the shared base (1.25em -> 2.5em). Footer-to-card-bottom spacing now
+       matches the top exactly (also 2.875em), instead of the inherited
+       1.15em it had before. */
+    padding-top: 2.875em;
+    padding-bottom: 2.875em;
+    padding-left: 2.5em;
+    padding-right: 2.5em;
+  }
+
+  .about-capability-card-header {
+    /* No fixed gap here — the list below centers itself vertically
+       between header and footer via auto margins (same approach as the
+       4-per-row desktop tier), so a fixed offset would make that
+       centering lopsided. */
+    margin-bottom: 0;
+  }
+
+  /* Vertically centers the bullet list between the header and the mirrored
+     footer, matching the 4-per-row desktop tier's centering. */
+  .about-capability-card-list {
+    margin-top: auto;
+    margin-bottom: auto;
+    gap: clamp(8pt, 2.5vw, 14pt);
+  }
+
+  .about-capability-card-footer {
+    /* List's own auto margins now handle the centering/bottom-pinning, so
+       this just follows the list with the front's normal gap. Also has to
+       re-enable display here, since the base rule now defaults to
+       display: none for the 4-per-row narrow desktop sub-range. row-reverse
+       puts the title first (left) and the letter second (right)
+       pre-rotation, which the footer's rotate(180deg) then swaps —
+       landing the letter on the left and the title on the right once
+       viewed right-side-up, mirroring the header's own letter-on-right
+       layout. */
+    display: flex;
+    margin-top: 0;
+    flex-direction: row-reverse;
+  }
+
+  /* Footer title mirrors the header title's new 10-28pt size at this
+     tier too. Wrapping is no longer used here (see below) — the lowered
+     floor above is meant to keep it on one line instead. */
+  .about-capability-card-footer-title {
+    font-size: clamp(10pt, calc(-19.65pt + 5.29vw), 28pt);
+  }
+
+  html[data-lang='zh'] .about-capability-card-footer-title {
+    font-size: clamp(20pt, calc(3.53pt + 2.94vw), 30pt);
+  }
+
+  /* Back to nowrap + ellipsis (same safety net as the 4-per-row tier) —
+     the previous round allowed wrapping here, but that let a wrapped
+     title grow the header tall enough to collide with the footer below
+     it. Per feedback: "英文下标题一行展示完整" (the title should display
+     complete on one line), so the fix is a lower font-size floor (see
+     the clamp() above) rather than wrapping. */
+  .about-capability-card-header-text,
+  .about-capability-card-footer-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Body: EN tracks the exact same responsive curve as CN, just 2pt
+     smaller at every width (10-16pt vs CN's 12-18pt) — same vw
+     coefficient (1.76), intercept shifted down by 2. Ellipsis truncation
+     dropped in favor of wrapping to a 2nd line when a bullet doesn't fit
+     on one line, per feedback: "如果英文展示不全，展示两行" — now matches
+     CN's own wrap behavior exactly. */
   .about-capability-card-list li {
-    font-size: clamp(0.76rem, 1.32vw, 0.86rem);
+    font-size: clamp(10pt, calc(0.12pt + 1.76vw), 16pt);
     line-height: 1.28;
+    padding-bottom: clamp(8pt, 2.5vw, 14pt);
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
 
   html[data-lang='zh'] .about-capability-card-list li {
-    font-size: clamp(0.76rem, 1.32vw, 0.86rem);
+    font-size: clamp(12pt, calc(2.12pt + 1.76vw), 18pt);
     line-height: 1.36;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
 }
+
+/* 2-per-row tier, narrowest sliver (560-610px): the mirrored footer title
+   gets removed here — cards are tight enough at this width that it was
+   crowding/overlapping the last bullet item above it. 611-900px keeps the
+   footer as normal. */
+@media (min-width: 560px) and (max-width: 610px) {
+  .about-capability-card-footer {
+    display: none;
+  }
+}
+
+/* 4 cards still stay side by side through here (unchanged from the
+   original breakpoint) — titles were wrapping to 2 lines at this width
+   because the font wasn't shrinking aggressively enough for how narrow
+   each of the 4 cards actually gets. Pulled both the font ceiling and the
+   viewport-scaling rate down hard so "BRAND ACTIVATION" / "TURNKEY
+   DELIVERY" (the longest titles) stay on one line across the whole
+   768-1180px range instead of just at the wide end of it. */
+/* Note: the old separate 768-1180px "4-column, shrink the font" block is
+   gone — the base rules above now use one clamp() spanning the whole
+   >900px range (both this squeezed sub-range and the wide-desktop
+   default), so there's nothing left for a sub-block to override here. */
 
 @media (max-width: 559px) {
   #about-capability {
@@ -735,27 +893,151 @@ html[data-lang='zh'] .about-capability-card-list li {
   /* Back face now stays visible on mobile too, so the flip actually shows
      the card-back pattern mid-rotation instead of a blank gap. */
 
-  .about-capability-card-header-text {
-    font-size: calc(1.04em + 4pt);
-  }
-
-  html[data-lang='zh'] .about-capability-card-header-text {
-    font-size: calc(1.04em + 6pt);
-  }
+  /* Title/body font sizes for this 1-per-row tier are now split into two
+     narrower sub-ranges (360-559px and <360px) instead of one continuous
+     clamp spanning the whole tier — see the two @media blocks right after
+     this one's closing brace. Everything else here (layout, letter size,
+     gaps, footer pin) stays shared across both sub-ranges. */
 
   .about-capability-card-header-letter {
     font-size: 2.1em;
   }
 
+  /* Single card fills the full width here — the widest a card ever gets —
+     so spacing goes further than the 2-up tier, not back down to tight.
+     Header/list gaps switched from em (tracking the small ambient card
+     font, not the title/content's own much bigger pt sizes above) to a
+     pt-based clamp so they scale in proportion to the new text size. */
+  .about-capability-card-front {
+    gap: 1.9em;
+  }
+
+  .about-capability-card-header {
+    margin-bottom: clamp(16pt, 7vw, 32pt);
+  }
+
+  /* Cancel the 4-per-row tier's auto-margin vertical centering — this
+     1-up tier keeps its original footer-pinned-to-bottom layout (the
+     centering ask was specific to the desktop 4-up card). */
+  .about-capability-card-list {
+    margin-top: 0;
+    margin-bottom: 0;
+    gap: clamp(12pt, 5vw, 24pt);
+  }
+
+  .about-capability-card-footer {
+    /* Re-enable display here — the base rule now defaults to display:
+       none for the 4-per-row narrow desktop sub-range. */
+    display: flex;
+    margin-top: auto;
+  }
+
+  /* Body font-size now set per sub-range below; padding-bottom/line-height
+     stay shared here across both sub-ranges. */
   .about-capability-card-list li {
-    font-size: clamp(0.78rem, 2.4vw, 0.9rem);
     line-height: 1.3;
-    padding-bottom: 0.4em;
+    padding-bottom: clamp(12pt, 5vw, 24pt);
   }
 
   html[data-lang='zh'] .about-capability-card-list li {
-    font-size: clamp(0.78rem, 2.4vw, 0.9rem);
     line-height: 1.4;
+  }
+}
+
+/* 1-per-row tier, upper sub-range (360-559px): title 18-30pt EN / 20-32pt
+   CN, body 12-22pt (two-point fluid fit). Also adds the mirrored footer
+   title (matching the header's size) and widens the card's inner padding
+   for this sub-range specifically — title-to-card-top spacing is 2.5x the
+   shared base padding-top (1.15em -> 2.875em), left/right content-to-edge
+   spacing is 2x the shared base (1.25em -> 2.5em). */
+@media (min-width: 360px) and (max-width: 559px) {
+  .about-capability-card-header-text {
+    font-size: clamp(18pt, calc(-3.6pt + 6vw), 30pt);
+  }
+
+  html[data-lang='zh'] .about-capability-card-header-text {
+    font-size: clamp(20pt, calc(-1.6pt + 6vw), 32pt);
+  }
+
+  /* Content vertically centers between the header and footer titles here
+     (same auto-margin technique as the other tiers) — overrides the
+     shared <560px block's fixed margin-top/bottom: 0. Font-size stays
+     fluid via the clamp() above, so the centering re-balances itself
+     automatically as the text (and therefore the leftover space) changes
+     size across this sub-range. */
+  .about-capability-card-list {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+
+  .about-capability-card-list li {
+    font-size: clamp(12pt, calc(-6pt + 5vw), 22pt);
+  }
+
+  html[data-lang='zh'] .about-capability-card-list li {
+    font-size: clamp(12pt, calc(-6pt + 5vw), 22pt);
+  }
+
+  .about-capability-card-front {
+    /* Footer-title-to-card-bottom spacing now matches header-title-to-
+       card-top spacing exactly (both 2.875em). */
+    padding-top: 2.875em;
+    padding-bottom: 2.875em;
+    padding-left: 2.5em;
+    padding-right: 2.5em;
+  }
+
+  .about-capability-card-footer {
+    /* List's auto margins now handle bottom-pinning, so cancel the
+       shared <560px block's margin-top: auto here. Also flip the letter
+       to the title's left: row-reverse puts the title first (left) and
+       the letter second (right) pre-rotation, which the footer's
+       rotate(180deg) then swaps — landing the letter on the left and the
+       title on the right once viewed right-side-up. */
+    margin-top: 0;
+    flex-direction: row-reverse;
+  }
+
+  .about-capability-card-footer-title {
+    font-size: clamp(18pt, calc(-3.6pt + 6vw), 30pt);
+  }
+
+  html[data-lang='zh'] .about-capability-card-footer-title {
+    font-size: clamp(20pt, calc(-1.6pt + 6vw), 32pt);
+  }
+}
+
+/* 1-per-row tier, narrowest sub-range (<360px): same underlying fluid
+   formulas as the 360-559px sub-range above (so the curve is continuous
+   across the 360px boundary, no jump). Floors dropped much lower than
+   before (16/18/10pt -> 10/12/6pt) so text keeps auto-shrinking on very
+   narrow phones instead of holding flat and risking overflow past the
+   card edge — per feedback: "所有文字都自动缩小以至于卡片内能展示完整".
+   No padding/centering/footer-order overrides here — those were scoped
+   to the 360-559px sub-range only. */
+@media (max-width: 359px) {
+  .about-capability-card-header-text {
+    font-size: clamp(10pt, calc(-3.6pt + 6vw), 18pt);
+  }
+
+  html[data-lang='zh'] .about-capability-card-header-text {
+    font-size: clamp(12pt, calc(-1.6pt + 6vw), 20pt);
+  }
+
+  .about-capability-card-list li {
+    font-size: clamp(6pt, calc(-6pt + 5vw), 12pt);
+  }
+
+  html[data-lang='zh'] .about-capability-card-list li {
+    font-size: clamp(6pt, calc(-6pt + 5vw), 12pt);
+  }
+
+  .about-capability-card-footer-title {
+    font-size: clamp(10pt, calc(-3.6pt + 6vw), 18pt);
+  }
+
+  html[data-lang='zh'] .about-capability-card-footer-title {
+    font-size: clamp(12pt, calc(-1.6pt + 6vw), 20pt);
   }
 }
 
