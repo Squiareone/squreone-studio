@@ -522,22 +522,25 @@ html[data-lang='zh'] .header-menu-link-text-clone {
   /* Was 1.625em inherited from #header's own clamp — for long English
      labels in a monospace font that ran past the card edge (cut off mid
      word, e.g. "EXPERTI[SE]"). Independent clamp instead so it scales with
-     the viewport directly and stays a safe size at any phone width. */
+     the viewport directly and stays a safe size at any phone width.
+     The 5.2vw/22px ceiling still clipped the trailing "E" on some phone
+     widths — pulled both down further for a bigger safety margin, and
+     trimmed the icon/gap slightly to give the label a touch more room. */
   .header-menu-link-text,
   .header-menu-link-text-clone {
-    font-size: clamp(16px, 5.2vw, 22px);
+    font-size: clamp(15px, 4.6vw, 19px);
     letter-spacing: 0.01em;
   }
 
   .header-menu-link-inner {
     min-height: 56px;
     padding: 0 1.02em;
-    gap: 0.6em;
+    gap: 0.5em;
   }
 
   .header-menu-link-svg {
-    width: 1.3em;
-    height: 1.3em;
+    width: 1.2em;
+    height: 1.2em;
     /* Base rule waits for :hover (scale(0)→1) to reveal the icon — there's
        no hover on touch, so it stayed invisible. Show it outright. */
     transform: scale(1);

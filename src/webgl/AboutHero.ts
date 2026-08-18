@@ -111,6 +111,12 @@ export class AboutHero {
   private hoveredIndex = -1;
   private labelEl: HTMLElement | null = null;
   private labelTextEl: HTMLElement | null = null;
+  // The floating photo hover pill only makes sense over the hero starfield —
+  // once Cases & Scenarios scrolls to fill the screen, its own title/desc
+  // (and later the story frames) shouldn't get an unrelated product-name
+  // pill floating over them, so the label is suppressed while that section
+  // is the one in view.
+  private labelSuppressEl: HTMLElement | null = null;
   private readonly onPointerMove = (e: PointerEvent) => {
     this.pointerNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
     this.pointerNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -130,6 +136,7 @@ export class AboutHero {
 
     this.labelEl = document.getElementById('hero-image-label');
     this.labelTextEl = document.getElementById('hero-image-label-text');
+    this.labelSuppressEl = document.getElementById('cases-scenarios');
     window.addEventListener('pointermove', this.onPointerMove, { passive: true });
 
     engine.onRender((dt, elapsed) => {
@@ -623,8 +630,15 @@ export class AboutHero {
 
       // Hover label — DOM element following the hovered sprite's projected
       // screen position (see #hero-image-label in index.html).
+      let sectionSuppressesLabel = false;
+      if (this.labelSuppressEl) {
+        const rect = this.labelSuppressEl.getBoundingClientRect();
+        const viewportMid = window.innerHeight * 0.5;
+        sectionSuppressesLabel = rect.top <= viewportMid && rect.bottom >= viewportMid;
+      }
+
       if (this.labelEl && this.labelTextEl) {
-        if (this.hoveredIndex >= 0) {
+        if (this.hoveredIndex >= 0 && !sectionSuppressesLabel) {
           const item = this.miniObjects[this.hoveredIndex];
           this.tmpV3.copy(item.sprite.position).project(camera);
           const behindCamera = this.tmpV3.z > 1;
