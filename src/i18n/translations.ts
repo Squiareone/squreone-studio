@@ -12,8 +12,15 @@ export interface Copy {
   expertiseTitleLine1: string;
   expertiseTitleLine2: string;
   expertiseSubtitle: string;
-  /** Four expertise cards: title + body copy */
-  expertiseCards: { title: string; body: string }[];
+  /**
+   * Four expertise cards: title + a short bullet list (replaced the single
+   * paragraph so each card reads as scannable capability tags, matching a
+   * "Digital Experience Strategy / Technology Strategy / ..." reference
+   * style — also lets the four cards, read together, tell the ecosystem
+   * story: brand consulting → physical/experiential design → manufacturing
+   * → global delivery).
+   */
+  expertiseCards: { title: string; bullets: string[] }[];
   casesTitle: string;
   casesDesc: string;
   /**
@@ -63,19 +70,39 @@ export const copy: Record<Lang, Copy> = {
     expertiseCards: [
       {
         title: "Strategic design",
-        body: "Custom engineering aligned directly with your brand marketing strategy. We inject original, powerful design into physical touchpoints to build premium brand equity.",
+        bullets: [
+          "Brand Strategy Consulting",
+          "Physical Touchpoint Design",
+          "Material & Cost Engineering",
+          "Premium Brand Equity",
+        ],
       },
       {
         title: "Brand activation",
-        body: "Transforming brand concepts into immersive offline experiences that spark organic virality. We rethink spatial mechanics and physical interaction to build deep community connection - within budget.",
+        bullets: [
+          "Offline Experience Design",
+          "Spatial & Exhibition Design",
+          "Community Engagement",
+          "Budget-Conscious Execution",
+        ],
       },
       {
         title: "Turnkey delivery",
-        body: "End-to-end execution from concept to mass production, taking blueprints to the factory floor. Our single-point model eliminates vendor disconnect and ensures 100% high-fidelity replication.",
+        bullets: [
+          "Prototyping & Sampling",
+          "Mass Production",
+          "Factory-Direct Manufacturing",
+          "End-to-End Quality Control",
+        ],
       },
       {
         title: "Global vision",
-        body: "Dual-hub efficiency connecting global aesthetics with hyper-scaled supply chains. We empower brands and tech giants to maximize cost control and break borders.",
+        bullets: [
+          "Dual-Hub Sourcing",
+          "Hyper-Scaled Supply Chains",
+          "Cross-Border Delivery",
+          "Cost Control at Scale",
+        ],
       },
     ],
     casesTitle: "Cases & Scenarios",
@@ -132,19 +159,19 @@ export const copy: Record<Lang, Copy> = {
     expertiseCards: [
       {
         title: "策略设计",
-        body: "定制化设计工厂，与品牌影响策略直接同步。我们讲原创设计力注入品牌构筑高端资产。",
+        bullets: ["品牌策略咨询", "实体触点设计", "材料与成本工程", "高端品牌资产"],
       },
       {
         title: "品牌活化",
-        body: "将品牌理念转化为沉浸式线下体验，驱动用户自发传播。我们重构空间机制与实体互动，在预算内激活深度社群共鸣。",
+        bullets: ["线下体验设计", "空间与展陈设计", "社群互动运营", "预算内高效执行"],
       },
       {
         title: "一站式交付",
-        body: "从概念到量产的全链路执行，让蓝图直达工厂产线。单点对接模式消除供应商断层，确保100%高保真还原。",
+        bullets: ["打样与样品制作", "规模化量产", "工厂直连制造", "全流程品控"],
       },
       {
         title: "全球视野",
-        body: "双枢纽高效协同，链接全球审美与超规模供应链。助力品牌与科技巨头实现极致成本控制与无界突破。",
+        bullets: ["双枢纽供应链", "超规模供应网络", "跨境交付能力", "规模化成本控制"],
       },
     ],
     casesTitle: "案例与场景",

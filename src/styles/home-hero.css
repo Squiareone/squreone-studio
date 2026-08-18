@@ -443,7 +443,11 @@ html[data-lang='zh'] .story-detail-text {
   background: #e9e9f2;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  /* Base gap — this is what separates the list from the mirrored footer
+     below it. Header-to-list spacing is this gap PLUS the header's own
+     margin-bottom below, so the two distances can grow independently. */
+  gap: 1.35em;
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.34);
 }
 
@@ -451,11 +455,17 @@ html[data-lang='zh'] .story-detail-text {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex: 0 0 auto;
+  /* Header-to-list gap is now 3.375em total: the 1.35em shared gap above
+     plus this extra 2.025em, so it grows without dragging the list-to-
+     footer spacing along with it. */
+  margin-bottom: 2.025em;
 }
 
 .about-capability-card-header-text {
   margin: 0;
-  font-size: clamp(1rem, 1.08vw, 1.18rem);
+  /* +4pt on top of the existing responsive clamp. */
+  font-size: calc(clamp(1rem, 1.08vw, 1.18rem) + 4pt);
   font-weight: 500;
   color: var(--color-black);
   text-transform: uppercase;
@@ -470,12 +480,89 @@ html[data-lang='zh'] .story-detail-text {
   color: var(--color-black);
 }
 
-.about-capability-card-copy {
+/* Bullet-style capability list (replaced the single paragraph so the card's
+   lower half isn't mostly dead space) — short line items, each underlined
+   with a dotted rule. justify-content was space-between, which stretched
+   the gaps to fill the whole card height — uneven and grew huge once the
+   spacing was loosened, unlike the reference's evenly-packed group sitting
+   right under the title. flex-start + a fixed gap keeps every gap (header
+   to item 1, and between each item) the same size; any leftover height
+   just falls empty below the last item instead of getting distributed. */
+.about-capability-card-list {
   margin: 0;
-  font-size: clamp(0.76rem, 0.96vw, 0.96rem);
-  line-height: 1.5;
+  padding: 0;
+  list-style: none;
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.9em;
+}
+
+/* border-bottom:dotted renders each dot flush against the next (browser
+   dot-spacing isn't controllable via border), which read as a solid line
+   at this thickness — a background-image dot pattern instead, so the gap
+   between dots is an explicit value (25% wider than the first "make it
+   actually look dotted" pass: 6px → 7.5px). */
+.about-capability-card-list li {
+  margin: 0;
+  padding-bottom: 1.05em;
+  font-size: clamp(0.84rem, 1.05vw, 1.05rem);
+  line-height: 1.3;
   color: #444444;
   letter-spacing: -0.01em;
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.34) 0,
+    rgba(0, 0, 0, 0.34) 2px,
+    transparent 2px,
+    transparent 9.5px
+  );
+  background-position: bottom;
+  background-size: 100% 1px;
+  background-repeat: repeat-x;
+}
+
+.about-capability-card-list li:last-child {
+  background-image: none;
+  padding-bottom: 0;
+}
+
+/* Mirrored footer duplicate (mark + title, flipped 180deg) — matches the
+   reference card's bottom-left flourish. Decorative only (aria-hidden),
+   pinned to the bottom of the front face; any leftover height above it
+   from .about-capability-card-list no longer stretching to fill the card
+   (see justify-content: flex-start above) ends up between the list and
+   this footer instead of being empty dead space. */
+.about-capability-card-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  transform: rotate(180deg);
+  transform-origin: center;
+  opacity: 0.9;
+}
+
+.about-capability-card-footer-letter {
+  font-size: clamp(1.3rem, 1.6vw, 1.85rem);
+  font-family: var(--font-mono);
+  margin: 0;
+  color: var(--color-black);
+}
+
+.about-capability-card-footer-title {
+  margin: 0;
+  font-size: clamp(1rem, 1.08vw, 1.18rem);
+  font-weight: 500;
+  color: var(--color-black);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+html[data-lang='zh'] .about-capability-card-footer-title {
+  font-family: 'Noto Sans SC', var(--font-sans);
 }
 
 html[data-lang='zh'] .about-capability-card-header-text,
@@ -483,10 +570,16 @@ html[data-lang='zh'] #about-capability-subheader {
   font-family: 'Noto Sans SC', var(--font-sans);
 }
 
-html[data-lang='zh'] .about-capability-card-copy {
+/* ZH title gets +2pt on top of the shared +4pt EN already has (+6pt total)
+   — EN itself stays at the shared base rule's +4pt. */
+html[data-lang='zh'] .about-capability-card-header-text {
+  font-size: calc(clamp(1rem, 1.08vw, 1.18rem) + 6pt);
+}
+
+html[data-lang='zh'] .about-capability-card-list li {
   font-family: 'Noto Sans SC', var(--font-sans);
-  font-size: clamp(0.76rem, 0.96vw, 0.96rem);
-  line-height: 1.58;
+  font-size: clamp(0.8rem, 1vw, 1rem);
+  line-height: 1.4;
 }
 
 @media (min-width: 768px) and (max-width: 1180px) {
@@ -495,21 +588,25 @@ html[data-lang='zh'] .about-capability-card-copy {
   }
 
   .about-capability-card-header-text {
-    font-size: 1.02em;
+    font-size: calc(1.02em + 4pt);
+  }
+
+  html[data-lang='zh'] .about-capability-card-header-text {
+    font-size: calc(1.02em + 6pt);
   }
 
   .about-capability-card-header-letter {
     font-size: 2.12em;
   }
 
-  .about-capability-card-copy {
-    font-size: clamp(0.74rem, 0.72vw, 0.82rem);
-    line-height: 1.48;
+  .about-capability-card-list li {
+    font-size: clamp(0.78rem, 0.76vw, 0.86rem);
+    line-height: 1.28;
   }
 
-  html[data-lang='zh'] .about-capability-card-copy {
-    font-size: clamp(0.74rem, 0.72vw, 0.82rem);
-    line-height: 1.54;
+  html[data-lang='zh'] .about-capability-card-list li {
+    font-size: clamp(0.78rem, 0.76vw, 0.86rem);
+    line-height: 1.36;
   }
 }
 
@@ -552,21 +649,25 @@ html[data-lang='zh'] .about-capability-card-copy {
   }
 
   .about-capability-card-header-text {
-    font-size: 1em;
+    font-size: calc(1em + 4pt);
+  }
+
+  html[data-lang='zh'] .about-capability-card-header-text {
+    font-size: calc(1em + 6pt);
   }
 
   .about-capability-card-header-letter {
     font-size: 2.05em;
   }
 
-  .about-capability-card-copy {
-    font-size: clamp(0.72rem, 1.22vw, 0.8rem);
-    line-height: 1.5;
+  .about-capability-card-list li {
+    font-size: clamp(0.76rem, 1.32vw, 0.86rem);
+    line-height: 1.28;
   }
 
-  html[data-lang='zh'] .about-capability-card-copy {
-    font-size: clamp(0.72rem, 1.22vw, 0.8rem);
-    line-height: 1.56;
+  html[data-lang='zh'] .about-capability-card-list li {
+    font-size: clamp(0.76rem, 1.32vw, 0.86rem);
+    line-height: 1.36;
   }
 }
 
@@ -635,21 +736,26 @@ html[data-lang='zh'] .about-capability-card-copy {
      the card-back pattern mid-rotation instead of a blank gap. */
 
   .about-capability-card-header-text {
-    font-size: 1.04em;
+    font-size: calc(1.04em + 4pt);
+  }
+
+  html[data-lang='zh'] .about-capability-card-header-text {
+    font-size: calc(1.04em + 6pt);
   }
 
   .about-capability-card-header-letter {
     font-size: 2.1em;
   }
 
-  .about-capability-card-copy {
-    font-size: clamp(0.72rem, 1.95vw, 0.82rem);
-    line-height: 1.52;
+  .about-capability-card-list li {
+    font-size: clamp(0.78rem, 2.4vw, 0.9rem);
+    line-height: 1.3;
+    padding-bottom: 0.4em;
   }
 
-  html[data-lang='zh'] .about-capability-card-copy {
-    font-size: clamp(0.72rem, 1.95vw, 0.82rem);
-    line-height: 1.58;
+  html[data-lang='zh'] .about-capability-card-list li {
+    font-size: clamp(0.78rem, 2.4vw, 0.9rem);
+    line-height: 1.4;
   }
 }
 

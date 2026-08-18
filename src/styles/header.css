@@ -249,7 +249,12 @@ html[data-lang='zh'] #header-logo-text {
   position: absolute;
   top: calc(100% + 0.6em);
   right: 0;
-  width: 19.38em;
+  /* Was 19.38em — "AREAS OF EXPERTISE" at this card's max font-size was
+     still tight enough to clip on ordinary desktop widths (the text's own
+     clamp maxes out well before the em-based card width catches up). Wider
+     flat value so there's real breathing room instead of a coincidental
+     near-fit. */
+  width: 22em;
   display: flex;
   flex-direction: column;
   gap: 0.625em;
@@ -463,7 +468,7 @@ html[data-lang='zh'] .header-menu-link-text-clone {
 
 @media (min-width: 768px) and (max-width: 1180px) {
   #header-menu {
-    width: min(22.5em, calc(100vw - var(--base-padding-x) * 2));
+    width: min(26em, calc(100vw - var(--base-padding-x) * 1.2));
   }
 
   .header-menu-link-inner {
@@ -509,8 +514,14 @@ html[data-lang='zh'] .header-menu-link-text-clone {
   }
 
   #header-menu {
-    left: 0;
-    right: 0;
+    /* Was left/right:0 — flush with #header-container's content box, i.e.
+       still inset by the full --base-padding-x on each side. That extra
+       margin was squeezing "AREAS OF EXPERTISE" enough to clip its last
+       letter even after shrinking the font. Break out into most of that
+       padding (keep ~40% as breathing room from the true screen edge) so
+       the card itself is wider instead of the text getting smaller. */
+    left: calc(-1 * var(--base-padding-x) * 0.9);
+    right: calc(-1 * var(--base-padding-x) * 0.9);
     width: auto;
     max-width: none;
     max-height: calc(100vh - 7.2rem);
@@ -522,13 +533,10 @@ html[data-lang='zh'] .header-menu-link-text-clone {
   /* Was 1.625em inherited from #header's own clamp — for long English
      labels in a monospace font that ran past the card edge (cut off mid
      word, e.g. "EXPERTI[SE]"). Independent clamp instead so it scales with
-     the viewport directly and stays a safe size at any phone width.
-     The 5.2vw/22px ceiling still clipped the trailing "E" on some phone
-     widths — pulled both down further for a bigger safety margin, and
-     trimmed the icon/gap slightly to give the label a touch more room. */
+     the viewport directly and stays a safe size at any phone width. */
   .header-menu-link-text,
   .header-menu-link-text-clone {
-    font-size: clamp(15px, 4.6vw, 19px);
+    font-size: clamp(15px, 4.8vw, 20px);
     letter-spacing: 0.01em;
   }
 

@@ -104,14 +104,21 @@ export class LanguageController {
       el.textContent = t.continueScroll;
     });
 
-    // Expertise cards (title + body); letter badges S/B/T/G stay as-is
+    // Expertise cards (title + bullet list); letter badges S/B/T/G stay as-is
     document.querySelectorAll<HTMLElement>('.about-capability-card').forEach((card, i) => {
       const copy = t.expertiseCards[i];
       if (!copy) return;
       const title = card.querySelector<HTMLElement>('.about-capability-card-header-text');
-      const body = card.querySelector<HTMLElement>('.about-capability-card-copy');
       if (title) title.textContent = copy.title;
-      if (body) body.textContent = copy.body;
+      const items = card.querySelectorAll<HTMLElement>('.about-capability-card-list li');
+      items.forEach((li, j) => {
+        const text = copy.bullets[j];
+        if (text !== undefined) li.textContent = text;
+      });
+      // Mirrored footer duplicate (decorative, aria-hidden) — same title as
+      // the header, letter badge stays as-is.
+      const footerTitle = card.querySelector<HTMLElement>('.about-capability-card-footer-title');
+      if (footerTitle) footerTitle.textContent = copy.title;
     });
 
     // Full-bleed Experience story headlines — one per photo step, matched
