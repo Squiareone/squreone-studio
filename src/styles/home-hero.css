@@ -29,15 +29,16 @@
 }
 
 /*
- * 3 sequential panels. Use % of the pin (NOT 100vw) —
- * 100vw includes scrollbar gutter and easily creates horizontal
- * overflow → whole page shifts left with blank space on the right.
+ * 4 sequential panels (was 3 — panel 4 is the new process-overview slide).
+ * Use % of the pin (NOT 100vw) — 100vw includes scrollbar gutter and
+ * easily creates horizontal overflow → whole page shifts left with blank
+ * space on the right.
  */
 #home-hero-track {
   display: flex;
   flex-flow: row nowrap;
   align-items: stretch;
-  width: 300%;
+  width: 400%;
   height: 100%;
   will-change: transform;
   transform: translate3d(0, 0, 0);
@@ -45,9 +46,9 @@
 
 .home-panel {
   position: relative;
-  flex: 0 0 33.333333%;
-  width: 33.333333%;
-  max-width: 33.333333%;
+  flex: 0 0 25%;
+  width: 25%;
+  max-width: 25%;
   height: 100%;
   overflow: hidden;
   pointer-events: none;
@@ -1038,6 +1039,320 @@ html[data-lang='zh'] .about-capability-card-list li {
 
   html[data-lang='zh'] .about-capability-card-footer-title {
     font-size: clamp(12pt, calc(-1.6pt + 6vw), 20pt);
+  }
+}
+
+/* —— Process overview: home-hero panel 4 ——
+   Was a standalone section with its own scroll-into-view reveal; now lives
+   inside #home-hero-track as the 4th pinned/horizontal-slide panel (see
+   applyProgress's panel-4 handling in HomeHeroTimeline.ts), matching
+   panels 1-3's mechanics instead of a separate IntersectionObserver.
+   #process-overview reuses the shared .home-panel-inner class for its
+   base inset/padding (see that rule above). No opaque background here —
+   sits on the same floating-photo WebGL backdrop as panels 2/3, per
+   feedback: "4不是黑色背景，跟2，3一样，都是放在悬浮照片上" (this had an
+   opaque #080a0f ::before mask at first; removed). */
+#process-overview {
+  z-index: 1;
+  display: block;
+  /* Was flex + align-items:center (vertically centered), which made this
+     panel's title sit noticeably higher than panel 3's — panel 3 is
+     top-anchored via .home-panel-inner--story's own padding-top. Switched
+     to top-anchored here too, with the SAME padding-top value, so the two
+     titles start at the same distance from the top. Per feedback: "标题距
+     离顶部的距离一样，2按照1的距离调整". */
+  padding-top: calc(var(--base-padding-y) * 3.3);
+  color: var(--color-off-white);
+  /* .home-panel has pointer-events: none (panels 1-3 have no interactive
+     content) — this panel needs its hover states + the next-arrow click
+     to work, so re-enable here. Auto on a descendant overrides an
+     ancestor's none. */
+  pointer-events: auto;
+}
+
+#process-overview-inner {
+  position: relative;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.process-overview-eyebrow {
+  margin: 0 0 1.2em;
+  font-family: var(--font-mono);
+  font-size: clamp(0.8rem, 1vw, 1rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.68;
+}
+
+.process-overview-title {
+  /* Doubled per feedback: "流程图和标题的距离可以扩大一点，现在距离的两倍". */
+  margin: 0 0 clamp(3.6rem, 7.2vw, 6.4rem);
+  /* Generous cap so the copy wraps naturally (like .hero-secondary-title)
+     rather than hitting an early forced break — a longer version of this
+     copy used 30ch at this same font-size without overflow issues, so
+     this stays comfortably in that proven range. */
+  max-width: 34ch;
+  /* Matches .hero-secondary-title / .story-detail-title (panels 2 and 3)
+     exactly, per feedback: "4，5，6的字体大小是一样的" (4 = this title,
+     5 = panel 3's title, 6 = panel 2's title). */
+  font-size: clamp(2.4rem, 6.2vw, 6.4rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  /* No forced \n in the current copy — wraps naturally. pre-line kept in
+     case a future/longer translation needs an explicit break again. */
+  white-space: pre-line;
+}
+
+html[data-lang='zh'] .process-overview-eyebrow,
+html[data-lang='zh'] .process-overview-title,
+html[data-lang='zh'] .process-step-title,
+html[data-lang='zh'] .process-step-desc {
+  font-family: 'Noto Sans SC', var(--font-sans);
+}
+
+html[data-lang='zh'] .process-overview-title {
+  font-size: clamp(2.1rem, 5.3vw, 5.4rem);
+  line-height: 1.12;
+  max-width: 11ch;
+}
+
+/* The steps row sits on a connecting "track" line (::before, full width,
+   positioned behind the per-step dots) so the 4 steps read as one
+   continuous pipeline rather than 4 unrelated columns. */
+.process-overview-steps {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(1.5rem, 3vw, 3rem);
+}
+
+.process-overview-steps::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.process-step {
+  position: relative;
+  padding-top: 1.6em;
+  opacity: 0;
+  transform: translateY(28px);
+  /* Only opacity/translateY animate here (the reveal-on-scroll) — the
+     hover tilt lives on .process-step-inner below, on its own transition,
+     so the two effects never fight over the same `transform`. */
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+/* Staggered reveal — JS only ever toggles this one class on the section;
+   the per-step timing lives entirely in CSS. All 4 steps sit on the same
+   row, so a per-element scroll trigger wouldn't stagger them anyway —
+   they'd all cross the viewport threshold at once. */
+#process-overview.is-visible .process-step {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#process-overview.is-visible .process-step:nth-child(1) {
+  transition-delay: 0s;
+}
+
+#process-overview.is-visible .process-step:nth-child(2) {
+  transition-delay: 0.12s;
+}
+
+#process-overview.is-visible .process-step:nth-child(3) {
+  transition-delay: 0.24s;
+}
+
+#process-overview.is-visible .process-step:nth-child(4) {
+  transition-delay: 0.36s;
+}
+
+/* Node dot on the connecting track, one per step. Outlined by default,
+   fills solid white once revealed (with the same per-step delay as the
+   text via transition-delay inheritance from :nth-child below), and pops
+   fully solid + slightly larger on hover. */
+.process-step-dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #080a0f;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transform: translate(-50%, -50%) scale(1);
+  transition: background 0.4s ease, border-color 0.4s ease, transform 0.3s ease;
+}
+
+#process-overview.is-visible .process-step-dot {
+  background: var(--color-off-white);
+  border-color: var(--color-off-white);
+}
+
+#process-overview.is-visible .process-step:nth-child(1) .process-step-dot {
+  transition-delay: 0.15s;
+}
+
+#process-overview.is-visible .process-step:nth-child(2) .process-step-dot {
+  transition-delay: 0.27s;
+}
+
+#process-overview.is-visible .process-step:nth-child(3) .process-step-dot {
+  transition-delay: 0.39s;
+}
+
+#process-overview.is-visible .process-step:nth-child(4) .process-step-dot {
+  transition-delay: 0.51s;
+}
+
+/* Tilt wrapper — mousemove-driven (see main.ts), sets --tilt-x/--tilt-y
+   custom properties that this element's own (fast, independent) transition
+   picks up. Skipped entirely on touch devices, see main.ts. */
+.process-step-inner {
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  transform: perspective(700px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+  transition: transform 0.2s ease-out;
+  transform-style: preserve-3d;
+}
+
+.process-step-index {
+  display: block;
+  margin-bottom: 0.2em;
+  font-family: var(--font-mono);
+  font-size: clamp(2.4rem, 4.2vw, 4rem);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--color-off-white);
+  opacity: 0.16;
+  transition: opacity 0.35s ease, color 0.35s ease;
+}
+
+.process-step-title {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 0.4em;
+  margin-top: -0.85em;
+  font-size: clamp(1.15rem, 1.6vw, 1.6rem);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.process-step-desc {
+  margin: 0;
+  max-width: 26ch;
+  font-size: clamp(0.85rem, 1.1vw, 1rem);
+  line-height: 1.42;
+  opacity: 0.62;
+  transition: opacity 0.35s ease;
+  /* Was leaving a single orphan character/word alone on the last line
+     (e.g. "问。" on its own row). text-wrap: pretty is built specifically
+     to avoid that by rebalancing the line break; falls back silently to
+     normal wrapping in browsers that don't support it yet (Safari), so
+     it's a safe progressive enhancement either way. */
+  text-wrap: pretty;
+}
+
+/* Hover interaction — pointer/desktop only, so nothing gets stuck "hovered"
+   after a tap on touch devices. */
+@media (hover: hover) and (pointer: fine) {
+  .process-step:hover .process-step-index {
+    opacity: 0.32;
+  }
+
+  .process-step:hover .process-step-desc {
+    opacity: 1;
+  }
+
+  .process-step:hover .process-step-dot {
+    transform: translate(-50%, -50%) scale(1.35);
+  }
+}
+
+@media (max-width: 900px) {
+  /* Panel 4 is a fixed 100vh pinned slide with overflow: hidden — unlike a
+     normal section, there's no scroll escape hatch if content runs long,
+     so everything below trims aggressively for vertical fit rather than
+     just narrowing horizontally. */
+  #process-overview {
+    padding-top: calc(var(--base-padding-y) * 1.6);
+    padding-bottom: calc(var(--base-padding-y) * 1.2);
+  }
+
+  .process-overview-eyebrow {
+    margin-bottom: 0.6em;
+  }
+
+  .process-overview-title {
+    margin-bottom: clamp(1.4rem, 4vw, 2.2rem);
+    font-size: clamp(1.4rem, 3.6vw, 2rem);
+  }
+
+  .process-overview-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: clamp(1.4rem, 3.5vw, 2.2rem);
+  }
+
+  .process-overview-steps::before {
+    display: none;
+  }
+
+  .process-step-dot {
+    display: none;
+  }
+
+  .process-step {
+    padding-top: 0.8em;
+  }
+
+  .process-step-index {
+    font-size: clamp(1.8rem, 5vw, 2.6rem);
+    margin-bottom: 0.1em;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Descriptions are the first thing to go at very short viewport heights
+     — number + title stays scannable on its own, and dropping the desc
+     line is what actually buys back enough vertical room to guarantee the
+     4-step grid fits inside the fixed 100vh panel. */
+  .process-step-desc {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .process-overview-eyebrow {
+    font-size: 0.75rem;
+  }
+
+  .process-overview-title {
+    font-size: clamp(1.25rem, 5.5vw, 1.7rem);
+    max-width: 20ch;
+  }
+
+  html[data-lang='zh'] .process-overview-title {
+    max-width: 12ch;
+  }
+
+  .process-overview-steps {
+    row-gap: 1.1rem;
+  }
+
+  .process-step-index {
+    font-size: 1.6rem;
+  }
+
+  .process-step-title {
+    font-size: 1rem;
   }
 }
 

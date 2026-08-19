@@ -52,6 +52,8 @@ export class LanguageController {
       'hero-secondary-title': t.heroSecondary,
       'story-detail-title': t.storyTitle,
       'story-detail-text': t.detailText,
+      'process-overview-eyebrow': t.processEyebrow,
+      'process-overview-title': t.processTitle,
       'about-capability-title-line-1': t.expertiseTitleLine1,
       'about-capability-title-line-2': t.expertiseTitleLine2,
       'about-capability-subheader-text': t.expertiseSubtitle,
@@ -119,6 +121,20 @@ export class LanguageController {
       // the header, letter badge stays as-is.
       const footerTitle = card.querySelector<HTMLElement>('.about-capability-card-footer-title');
       if (footerTitle) footerTitle.textContent = copy.title;
+    });
+
+    // Process overview steps (index number + title + one-line description);
+    // index number (01/02/03/04) is language-independent but still driven
+    // from copy for a single source of truth.
+    document.querySelectorAll<HTMLElement>('.process-step').forEach((step, i) => {
+      const stepCopy = t.processSteps[i];
+      if (!stepCopy) return;
+      const index = step.querySelector<HTMLElement>('.process-step-index');
+      if (index) index.textContent = stepCopy.index;
+      const title = step.querySelector<HTMLElement>('.process-step-title');
+      if (title) title.textContent = stepCopy.title;
+      const desc = step.querySelector<HTMLElement>('.process-step-desc');
+      if (desc) desc.textContent = stepCopy.desc;
     });
 
     // Full-bleed Experience story headlines — one per photo step, matched

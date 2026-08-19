@@ -8,14 +8,19 @@ export type ScrollToFn = (target: string, opts?: { offset?: number }) => void;
 
 /**
  * Sequential multi-panel home (NOT left+right on same screen):
- *   panel1 Shaping Brands → panel2 We are a design-built → panel3 Story
- * Text motion still uses Lusion-style per-word opacity + translate3d.
+ *   panel1 Shaping Brands → panel2 We are a design-built → panel3 Story →
+ *   panel4 Process overview (how we work)
+ * Text motion still uses Lusion-style per-word opacity + translate3d for
+ * panels 1-3; panel 4 is a simpler whole-panel fade (see applyProgress)
+ * since its content is a grid of cards, not prose lines.
  */
 const RANGE_START_WAIT = 2.2;
 const RANGE_SLIDE_12 = 1.6;
 const RANGE_SLIDE_23 = 1.5;
+const RANGE_SLIDE_34 = 1.5;
 const RANGE_END_WAIT = 1.0;
-export const HOME_PIN_VH = RANGE_START_WAIT + RANGE_SLIDE_12 + RANGE_SLIDE_23 + RANGE_END_WAIT;
+export const HOME_PIN_VH =
+  RANGE_START_WAIT + RANGE_SLIDE_12 + RANGE_SLIDE_23 + RANGE_SLIDE_34 + RANGE_END_WAIT;
 
 /** Same scrubbed progress as home pin visuals (story arrow must use this, not a raw ST). */
 const homeHeroProgressListeners = new Set<(p: number) => void>();
@@ -88,20 +93,28 @@ export function initHomeHeroTimeline(onProgress?: (p: number) => void): () => vo
   const secondary = document.getElementById('hero-secondary-title');
   const storyTitle = document.getElementById('story-detail-title');
   const storyText = document.getElementById('story-detail-text');
+  const processPanel = document.getElementById('process-overview');
 
   if (!section || !pinEl || !track) return () => {};
 
-  gsap.killTweensOf([track, title, hint, secondary, storyTitle, storyText, pinEl]);
+  gsap.killTweensOf([track, title, hint, secondary, storyTitle, storyText, pinEl, processPanel]);
   gsap.killTweensOf(
     '#hero-title .word-wrap, #hero-secondary-title .word-wrap, #story-detail-title .word-wrap, #story-detail-text .word-wrap',
   );
 
   gsap.set(track, { x: 0, xPercent: 0, y: 0, force3D: true });
   gsap.set('#hero-title .word', { yPercent: 0, autoAlpha: 1 });
+  if (processPanel) gsap.set(processPanel, { autoAlpha: 0, x: 60, y: 0, force3D: true });
 
   const tHold = RANGE_START_WAIT / HOME_PIN_VH;
   const tP2 = (RANGE_START_WAIT + RANGE_SLIDE_12) / HOME_PIN_VH;
   const tP3 = (RANGE_START_WAIT + RANGE_SLIDE_12 + RANGE_SLIDE_23) / HOME_PIN_VH;
+  const tP4 = (RANGE_START_WAIT + RANGE_SLIDE_12 + RANGE_SLIDE_23 + RANGE_SLIDE_34) / HOME_PIN_VH;
+  // Once panel 4 (process-overview) has fully entered, its own internal
+  // step-by-step reveal (dots/lines/arrow — see the .is-visible CSS rules)
+  // takes over; only need to trigger that class once, not track it every
+  // frame.
+  let processRevealed = false;
 
   // Cache line groups after layout is ready (refreshed on resize via onRefresh)
   let titleLines: HTMLElement[][] = [];
@@ -132,23 +145,32 @@ export function initHomeHeroTimeline(onProgress?: (p: number) => void): () => vo
 
     const unit = Math.max(60, window.innerWidth * 0.08);
 
+    // 4 panels now (was 3) — each slide moves the track by 25% of its own
+    // width (400%-wide track / 4 panels), not 33.333%.
     let xPercent = 0;
     let slide12 = 0;
     let slide23 = 0;
+    let slide34 = 0;
 
     if (p <= tHold) {
       xPercent = 0;
     } else if (p <= tP2) {
       slide12 = (p - tHold) / (tP2 - tHold);
-      xPercent = -33.333 * easeCubicInOut(slide12);
+      xPercent = -25 * easeCubicInOut(slide12);
     } else if (p <= tP3) {
       slide12 = 1;
       slide23 = (p - tP2) / (tP3 - tP2);
-      xPercent = -33.333 - 33.333 * easeCubicInOut(slide23);
+      xPercent = -25 - 25 * easeCubicInOut(slide23);
+    } else if (p <= tP4) {
+      slide12 = 1;
+      slide23 = 1;
+      slide34 = (p - tP3) / (tP4 - tP3);
+      xPercent = -50 - 25 * easeCubicInOut(slide34);
     } else {
       slide12 = 1;
       slide23 = 1;
-      xPercent = -66.666;
+      slide34 = 1;
+      xPercent = -75;
     }
 
     gsap.set(track, { xPercent, x: 0, force3D: true });
@@ -194,37 +216,83 @@ export function initHomeHeroTimeline(onProgress?: (p: number) => void): () => vo
       });
     }
 
-    // Panel 3 title — enter from left, stagger by LINE only
+    // Panel 3 title — enter from right, exit left (both slide23/slide34),
+    // same single leftward direction as panel 1's exit and panel 2's
+    // enter+exit — was entering from the left then leaving to the right,
+    // a direction reversal that read as "text jumping left-right" once
+    // panel 3 gained an exit motion this session. Fixed per feedback:
+    // "3的过渡效果太复杂了，文字左右来回太跳了，跟1，2对齐".
     if (!storyTitleLines.length && units(storyTitle).length) rebuildLines();
     if (storyTitleLines.length) {
       storyTitleLines.forEach((line, li) => {
         const n = Math.max(1, storyTitleLines.length - 1);
         const s = n === 0 ? 0 : li / n;
         const enter = fit(slide23, 0.06 + s * 0.1, 0.58 + s * 0.22, 0, 1, easeCubicOut);
-        setLineMotion(line, (1 - enter) * -6.5 * unit, enter);
+        const leave = fit(slide34, s * 0.1, 0.55 + s * 0.25, 0, 1, easeCubicOut);
+        const show = Math.max(0, enter - leave);
+        const x = (1 - enter) * 6.5 * unit - leave * 6 * unit;
+        setLineMotion(line, x, show);
       });
     } else if (storyTitle) {
       const enter = fit(slide23, 0.12, 0.7, 0, 1, easeCubicOut);
-      gsap.set(storyTitle, { x: (1 - enter) * -7 * unit, opacity: enter, force3D: true });
+      const leave = fit(slide34, 0, 0.6, 0, 1, easeCubicOut);
+      gsap.set(storyTitle, {
+        x: (1 - enter) * 7 * unit - leave * 6 * unit,
+        opacity: Math.max(0, enter - leave),
+        force3D: true,
+      });
     }
 
-    // Panel 3 body — enter from right, stagger by LINE only (never per-word x)
+    // Panel 3 body — enter from right (slide23), exit left (slide34). Was
+    // adding a POSITIVE leave offset (further right) instead of negative —
+    // that made the text slide in from the right toward center, then
+    // reverse and slide back out to the right, a genuine back-and-forth
+    // bounce. Fixed to continue in the same leftward direction it entered.
     if (!storyTextLines.length && units(storyText).length) rebuildLines();
     if (storyTextLines.length) {
       storyTextLines.forEach((line, li) => {
         const n = Math.max(1, storyTextLines.length - 1);
         const s = n === 0 ? 0 : li / n;
         const enter = fit(slide23, 0.15 + s * 0.12, 0.7 + s * 0.22, 0, 1, easeCubicOut);
+        const leave = fit(slide34, s * 0.1, 0.55 + s * 0.25, 0, 1, easeCubicOut);
+        const show = Math.max(0, enter - leave);
         // whole line shares one x — "your" / "business" never cross
-        setLineMotion(line, (1 - enter) * 9 * unit, enter);
+        const x = (1 - enter) * 9 * unit - leave * 8 * unit;
+        setLineMotion(line, x, show);
       });
     } else if (storyText) {
       const enter = fit(slide23, 0.25, 0.9, 0, 1, easeCubicOut);
+      const leave = fit(slide34, 0, 0.6, 0, 1, easeCubicOut);
       gsap.set(storyText, {
-        x: (1 - enter) * 12 * unit,
-        opacity: enter,
+        x: (1 - enter) * 12 * unit - leave * 10 * unit,
+        opacity: Math.max(0, enter - leave),
         force3D: true,
       });
+    }
+
+    // Panel 4 (process-overview) — whole-panel fade + horizontal slide, not
+    // a per-line word stagger (its content is a card grid, not prose). Was
+    // a vertical rise (y) at first, but that broke the established
+    // language of panels 2/3 sliding in horizontally — switched to x so
+    // the 3→4 handoff reads the same way 2→3 does, per feedback: "3到4的
+    // 动效和2到3是一样的，字都往左滑走" (panel 3's own exit above already
+    // slides left the same way panel 1's exit does; this is the matching
+    // "slides in from the right" entrance for panel 4).
+    // Once it's most of the way in, flip on .is-visible once (not every
+    // frame) so the panel's own CSS-driven dot/line/arrow stagger (see
+    // home-hero.css) plays exactly once.
+    if (processPanel) {
+      const enter = fit(slide34, 0.15, 0.85, 0, 1, easeCubicOut);
+      gsap.set(processPanel, {
+        autoAlpha: enter,
+        x: (1 - enter) * 10 * unit,
+        y: 0,
+        force3D: true,
+      });
+      if (enter > 0.6 && !processRevealed) {
+        processRevealed = true;
+        processPanel.classList.add('is-visible');
+      }
     }
   };
 
@@ -296,7 +364,12 @@ export function initStoryNextArrow(scrollTo: ScrollToFn): () => void {
   const domCursorArrow = document.getElementById('story-next-arrow-svg');
   if (!domCursor) return () => {};
 
-  const endWaitStart = (RANGE_START_WAIT + RANGE_SLIDE_12 + RANGE_SLIDE_23) / HOME_PIN_VH;
+  // process-overview is now panel 4 of this same pin (not a separate
+  // section), so end-wait timing extends through RANGE_SLIDE_34 too, and
+  // this arrow's target reverts to about-capability — its original job:
+  // let people skip the pin's end-hold buffer straight into Expertise.
+  const endWaitStart =
+    (RANGE_START_WAIT + RANGE_SLIDE_12 + RANGE_SLIDE_23 + RANGE_SLIDE_34) / HOME_PIN_VH;
   const aboutTarget = '#about-capability';
   const aboutOffset = 0;
   const WHEEL_TRIGGER_THRESHOLD = 180;

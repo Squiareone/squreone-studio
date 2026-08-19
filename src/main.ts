@@ -95,7 +95,45 @@ async function init(): Promise<void> {
   ScrollTrigger.refresh();
 
   bindScrollIndicator();
+  // The custom small in-panel arrow (#process-next-arrow) was removed —
+  // this Lusion cursor-following arrow is the one continue-to-Expertise
+  // affordance now, same as it always was pre-panel-4. Its endWaitStart
+  // timing and target already account for the new 4-panel pin (see
+  // HomeHeroTimeline.ts), so it now appears once panel 4's hold period
+  // starts, not right after panel 3.
   initStoryNextArrow((target, opts) => scroll.scrollTo(target, opts));
+
+  // Process overview panel (panel 4 of the home-hero pinned track). Its
+  // enter/exit fade and the one-time .is-visible trigger for the internal
+  // dot/line stagger live in applyProgress inside initHomeHeroTimeline (see
+  // HomeHeroTimeline.ts), driven by the same scrubbed pin progress as
+  // panels 1-3. Only the cursor tilt is wired here, since it's independent
+  // of that reveal timing.
+  const processSection = document.getElementById('process-overview');
+  if (processSection && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    // Subtle cursor-follow tilt per step, desktop/pointer only (matches the
+    // `@media (hover: hover) and (pointer: fine)` guard in the CSS hover
+    // rules) — skipped entirely on touch so there's no stray listener cost
+    // on mobile, and no "stuck" tilt after a tap. Plain mousemove + a CSS
+    // custom property; no GSAP involved, so it can't touch the pinned
+    // timelines elsewhere.
+    const TILT_MAX_DEG = 8;
+    processSection.querySelectorAll<HTMLElement>('.process-step').forEach((step) => {
+      const inner = step.querySelector<HTMLElement>('.process-step-inner');
+      if (!inner) return;
+      step.addEventListener('mousemove', (e) => {
+        const rect = step.getBoundingClientRect();
+        const px = (e.clientX - rect.left) / rect.width - 0.5;
+        const py = (e.clientY - rect.top) / rect.height - 0.5;
+        inner.style.setProperty('--tilt-x', `${(-py * TILT_MAX_DEG).toFixed(2)}deg`);
+        inner.style.setProperty('--tilt-y', `${(px * TILT_MAX_DEG).toFixed(2)}deg`);
+      });
+      step.addEventListener('mouseleave', () => {
+        inner.style.setProperty('--tilt-x', '0deg');
+        inner.style.setProperty('--tilt-y', '0deg');
+      });
+    });
+  }
 
   const header = document.getElementById('header');
   const setHeaderLightMode = (isLight: boolean) => {

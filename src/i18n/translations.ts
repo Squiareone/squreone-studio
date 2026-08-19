@@ -8,6 +8,17 @@ export interface Copy {
   heroSecondary: string;
   storyTitle: string;
   detailText: string;
+  /**
+   * New section right after the hero (before Areas of Expertise): a short
+   * 4-step "how we work" pipeline (Strategy -> Design -> Production ->
+   * Delivery) so the full-service scope — brand strategy through physical
+   * manufacturing and supply chain — reads clearly before a visitor has to
+   * scroll deep into the page. Added per feedback: "it takes a bit of
+   * reading to figure out the manufacturing of physical items."
+   */
+  processEyebrow: string;
+  processTitle: string;
+  processSteps: { index: string; title: string; desc: string }[];
   expertiseTitle: string;
   expertiseTitleLine1: string;
   expertiseTitleLine2: string;
@@ -61,7 +72,31 @@ export const copy: Record<Lang, Copy> = {
     heroSecondary: "We are a design-built studio.",
     storyTitle: "Crafting uniqueness for your business.",
     detailText:
-      "With an architect's rigor in material and cost, we turn everyday objects into premium budget-friendly brand pieces - making your brand not just memorable, but portable.",
+      "From brand strategy to physical production and global supply chain, we handle it all - with an architect's rigor in material and cost, turning your ideas into premium, budget-friendly brand pieces built to travel.",
+    processEyebrow: "How we work",
+    processTitle: "One-stop service, concept to delivery.",
+    processSteps: [
+      {
+        index: "01",
+        title: "Strategy",
+        desc: "Brand strategy, identity, and product direction.",
+      },
+      {
+        index: "02",
+        title: "Design",
+        desc: "Physical product, packaging, and brand experience design.",
+      },
+      {
+        index: "03",
+        title: "Production",
+        desc: "Sampling, quality control, and factory-managed manufacturing.",
+      },
+      {
+        index: "04",
+        title: "Delivery",
+        desc: "Global supply chain, fulfillment, and worldwide delivery.",
+      },
+    ],
     expertiseTitle: "Areas of expertise",
     expertiseTitleLine1: "AREA OF",
     expertiseTitleLine2: "EXPERTISE",
@@ -149,7 +184,31 @@ export const copy: Record<Lang, Copy> = {
     heroSecondary: "设计驱动,\n构建一切",
     storyTitle: "为您的品牌打造独特价值",
     detailText:
-      "用建筑师的研究，打磨材质与成本的平衡；让寻常物件成为高级又实惠的品牌信物 - 你的品牌，不止被记住，还被带回家。",
+      "从品牌策略到实体制造与全球供应链，我们一站式为您打造 - 用建筑师般的严谨打磨材质与成本，让创意变成高级又实惠的品牌信物，随时随地带得走。",
+    processEyebrow: "我们如何工作",
+    processTitle: "一站式服务，创意到交付。",
+    processSteps: [
+      {
+        index: "01",
+        title: "策略",
+        desc: "品牌战略、视觉形象与产品方向。",
+      },
+      {
+        index: "02",
+        title: "设计",
+        desc: "实体产品、包装与品牌体验设计。",
+      },
+      {
+        index: "03",
+        title: "生产",
+        desc: "打样、品控与工厂化量产管理。",
+      },
+      {
+        index: "04",
+        title: "交付",
+        desc: "全球供应链、履约与世界范围交付。",
+      },
+    ],
     expertiseTitle: "专业领域",
     // Single line for ZH (EN keeps AREA OF / EXPERTISE on two lines)
     expertiseTitleLine1: "专业领域",
