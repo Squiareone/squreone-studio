@@ -160,7 +160,7 @@ export const copy: Record<Lang, Copy> = {
     contactEnquiryLabel: "General enquiry",
     contactStayLabel: "Stay in touch",
     contactFormDescription:
-      "Leave your email to discuss your project, request our Lookbook, or receive a quick evaluation within 24 hours.",
+      "Leave your email — let's talk through your project, send you our Lookbook, or offer a free evaluation.",
     contactEmailPlaceholder: "your@email.com",
     contactEmailLabel: "Email",
     contactSubmitAria: "Submit email",
@@ -253,7 +253,7 @@ export const copy: Record<Lang, Copy> = {
     contactEnquiryLabel: "商务与项目咨询",
     contactStayLabel: "保持联系",
     contactFormDescription:
-      "留下您的邮箱，探讨项目需求、索取作品集，或在 24 小时内获取评估方案。",
+      "留下您的邮箱，我们聊聊您的项目、奉上作品集，或为您提供免费评估。",
     contactEmailPlaceholder: "请输入您的邮箱...",
     contactEmailLabel: "邮箱",
     contactSubmitAria: "提交邮箱",
