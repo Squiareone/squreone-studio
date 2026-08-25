@@ -68,7 +68,7 @@ export const copy: Record<Lang, Copy> = {
     studioName: "SquareOne",
     studioShort: "SquareOne",
     introWelcome: "Welcome to SquareOne",
-    heroTitle: "Shaping Brands,\nOne at a time",
+    heroTitle: "Shaping Brands,\nOne at a Time",
     heroSecondary: "We are a design-built studio.",
     storyTitle: "Crafting uniqueness for your business.",
     detailText:
@@ -260,7 +260,7 @@ export const copy: Record<Lang, Copy> = {
     contactSocialXhs: "小红书",
     contactFooterCopy: "© 2026 大方. 保留所有权利。",
     contactFooterTagline: "用心设计。",
-    scrollHint: "向下滚动",
+    scrollHint: "滚动探索",
     langLabel: "语言",
     contact: "联系我们",
     menu: "菜单",

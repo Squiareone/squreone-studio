@@ -454,7 +454,9 @@ html[data-lang='zh'] .story-detail-text {
 
 .about-capability-card-header {
   display: flex;
-  justify-content: space-between;
+  /* Letter-badge chip removed (see below) — header now holds just the
+     title, so space-between no longer has a second item to push apart. */
+  justify-content: flex-start;
   align-items: center;
   flex: 0 0 auto;
   /* No fixed margin here at the 4-per-row (>900px) tier — the list below
@@ -488,20 +490,10 @@ html[data-lang='zh'] .story-detail-text {
   white-space: nowrap;
 }
 
-.about-capability-card-header-letter {
-  position: relative;
-  left: 0.15em;
-  flex: 0 0 auto;
-  /* 4-per-row tier, narrow sub-range (901-1079px): the letter shrinks too
-     (12-16pt) so it stops crowding out the title's available width — same
-     "adaptive, always shows in full" ask covers the letter too. The
-     1080-1600px range restores the original larger rem-based size (see
-     the min-width: 1080px override below). */
-  font-size: clamp(12pt, calc(-8.25pt + 2.25vw), 16pt);
-  font-family: var(--font-mono);
-  margin: 0;
-  color: var(--color-black);
-}
+/* Per feedback: "去掉首字母缩写" — the standalone S/B/T/G letter-badge chip
+   (header and its mirrored footer twin) is removed; the title's own first
+   letter now carries that emphasis instead, see the ::first-letter rule
+   below. */
 
 /* Bullet-style capability list (replaced the single paragraph so the card's
    lower half isn't mostly dead space) — short line items, each underlined
@@ -575,18 +567,16 @@ html[data-lang='zh'] .story-detail-text {
      default (mirrored footer removed there to save vertical room). The
      1080-1600px override below turns it back on. */
   display: none;
+  /* Letter chip removed — the title is now the footer's only child, in
+     normal (not row-reverse) flex order. Default justify-content packs it
+     against this row's start edge, which is the card's LEFT before the
+     180deg rotation below — rotation then flips that to the card's RIGHT
+     once viewed right-side-up, landing the title right-aligned per
+     feedback: "底部的标题居右对齐". */
   align-items: center;
-  gap: 0.5em;
   transform: rotate(180deg);
   transform-origin: center;
   opacity: 0.9;
-}
-
-.about-capability-card-footer-letter {
-  font-size: clamp(1.3rem, 1.6vw, 1.85rem);
-  font-family: var(--font-mono);
-  margin: 0;
-  color: var(--color-black);
 }
 
 .about-capability-card-footer-title {
@@ -602,6 +592,19 @@ html[data-lang='zh'] .story-detail-text {
 html[data-lang='zh'] .about-capability-card-footer-title {
   font-family: 'Noto Sans SC', var(--font-sans);
   font-size: clamp(14pt, calc(1.11pt + 1.43vw), 24pt);
+}
+
+/* First-letter emphasis replaces the removed S/B/T/G letter chip — EN
+   only (a bold/enlarged single Latin initial doesn't read the same way
+   on a 2-4 character CJK title), per feedback: "标题改成首字母加粗加大".
+   Header only — per follow-up feedback the mirrored footer twin's first
+   letter goes back to normal ("底部标题的首字母正常就好"), and the header's
+   own first letter gets an extra +2pt on top of the previous 1.5x size
+   ("顶部的首字母再增大2pt"). calc() mixes the relative 1.5em multiplier
+   with a flat +2pt so the bump holds at every viewport width. */
+html[data-lang='en'] .about-capability-card-header-text::first-letter {
+  font-weight: 700;
+  font-size: calc(1.5em + 4pt);
 }
 
 html[data-lang='zh'] .about-capability-card-header-text,
@@ -630,23 +633,12 @@ html[data-lang='zh'] .about-capability-card-list li {
     font-size: clamp(12pt, calc(-0.89pt + 1.43vw), 22pt);
   }
 
-  .about-capability-card-header-letter {
-    font-size: clamp(2.05rem, 2.48vw, 2.86rem);
-  }
-
   .about-capability-card-list li {
     font-size: clamp(9pt, calc(-1.31pt + 1.14vw), 17pt);
   }
 
   .about-capability-card-footer {
     display: flex;
-    /* row-reverse puts the title first (left) and the letter second
-       (right) pre-rotation, which the footer's rotate(180deg) then swaps —
-       landing the letter on the left and the title on the right once
-       viewed right-side-up, mirroring the header's own letter-on-right
-       layout. Same technique already used on the 2-per-row and 1-per-row
-       tiers. */
-    flex-direction: row-reverse;
   }
 }
 
@@ -706,10 +698,6 @@ html[data-lang='zh'] .about-capability-card-list li {
     font-size: clamp(20pt, calc(3.53pt + 2.94vw), 30pt);
   }
 
-  .about-capability-card-header-letter {
-    font-size: 2.05em;
-  }
-
   /* Cards are noticeably wider here (2-up instead of 4-up) — spacing
      bumped up from the 4-column base values to match, same idea as the
      reference site's own 2-up layout. Header/list gaps switched from em
@@ -749,15 +737,11 @@ html[data-lang='zh'] .about-capability-card-list li {
     /* List's own auto margins now handle the centering/bottom-pinning, so
        this just follows the list with the front's normal gap. Also has to
        re-enable display here, since the base rule now defaults to
-       display: none for the 4-per-row narrow desktop sub-range. row-reverse
-       puts the title first (left) and the letter second (right)
-       pre-rotation, which the footer's rotate(180deg) then swaps —
-       landing the letter on the left and the title on the right once
-       viewed right-side-up, mirroring the header's own letter-on-right
-       layout. */
+       display: none for the 4-per-row narrow desktop sub-range. Letter
+       chip removed — normal (not row-reverse) order right-aligns the sole
+       remaining title after rotation, same as the 4-per-row tier. */
     display: flex;
     margin-top: 0;
-    flex-direction: row-reverse;
   }
 
   /* Footer title mirrors the header title's new 10-28pt size at this
@@ -900,10 +884,6 @@ html[data-lang='zh'] .about-capability-card-list li {
      this one's closing brace. Everything else here (layout, letter size,
      gaps, footer pin) stays shared across both sub-ranges. */
 
-  .about-capability-card-header-letter {
-    font-size: 2.1em;
-  }
-
   /* Single card fills the full width here — the widest a card ever gets —
      so spacing goes further than the 2-up tier, not back down to tight.
      Header/list gaps switched from em (tracking the small ambient card
@@ -990,13 +970,10 @@ html[data-lang='zh'] .about-capability-card-list li {
 
   .about-capability-card-footer {
     /* List's auto margins now handle bottom-pinning, so cancel the
-       shared <560px block's margin-top: auto here. Also flip the letter
-       to the title's left: row-reverse puts the title first (left) and
-       the letter second (right) pre-rotation, which the footer's
-       rotate(180deg) then swaps — landing the letter on the left and the
-       title on the right once viewed right-side-up. */
+       shared <560px block's margin-top: auto here. Letter chip removed —
+       normal flex order right-aligns the sole remaining title once the
+       180deg rotation flips it, same as the wider tiers. */
     margin-top: 0;
-    flex-direction: row-reverse;
   }
 
   .about-capability-card-footer-title {
