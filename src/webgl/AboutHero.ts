@@ -649,15 +649,31 @@ export class AboutHero {
       // check above only covers one specific case (Cases & Scenarios); this
       // covers ANY foreground UI sitting in front of the canvas at the
       // cursor's actual screen position (expertise cards, hero panels with
-      // interactive content, etc). elementFromPoint respects pointer-events,
-      // so purely decorative panels (pointer-events: none, the default on
-      // .home-panel) are transparently skipped and still resolve to the
-      // canvas underneath — only genuinely opaque/interactive foreground
-      // elements (pointer-events: auto) count as occluding.
+      // interactive content, etc).
+      //
+      // elementFromPoint returns the deepest hit-testable element under the
+      // cursor — but #canvas itself is pointer-events:none (so the raycast
+      // logic above still works while clicks pass through to real UI), which
+      // means elementFromPoint can never actually return the canvas. Every
+      // point on the page also sits inside plain structural wrapper divs
+      // (#page-container, .page, etc.) that have no visual content of their
+      // own and default to pointer-events:auto, so comparing the hit result
+      // against `this.engine.canvas` was true almost everywhere — the label
+      // never showed at all. Per feedback: "鼠标hover背景图的图片的时候没有
+      // 显示名称，这个要加回来，只是如果前景有遮挡，这个显示不展示" (bring the
+      // hover label back; only suppress it where real foreground content
+      // actually occludes it). Fixed by checking against an explicit list of
+      // real foreground UI containers instead — anything else (the empty
+      // structural wrappers) counts as unoccluded.
       let pointerOccluded = false;
       if (this.pointerClientX > -1000) {
         const topEl = document.elementFromPoint(this.pointerClientX, this.pointerClientY);
-        pointerOccluded = !!topEl && topEl !== this.engine.canvas;
+        pointerOccluded = !!(
+          topEl &&
+          topEl.closest(
+            '#header, #header-menu, .home-panel-inner, #home-continue-pill, #cases-track, #contact-section',
+          )
+        );
       }
 
       if (this.labelEl && this.labelTextEl) {
