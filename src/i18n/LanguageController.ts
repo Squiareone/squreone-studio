@@ -49,14 +49,9 @@ export class LanguageController {
       'header-right-menu-btn-text-close': t.menuClose,
       'intro-loader-welcome': t.introWelcome,
       'hero-title': t.heroTitle,
-      'hero-secondary-title': t.heroSecondary,
       'story-detail-title': t.storyTitle,
-      'story-detail-text': t.detailText,
       'process-overview-eyebrow': t.processEyebrow,
       'process-overview-title': t.processTitle,
-      'about-capability-title-line-1': t.expertiseTitleLine1,
-      'about-capability-title-line-2': t.expertiseTitleLine2,
-      'about-capability-subheader-text': t.expertiseSubtitle,
       'cases-title': t.casesTitle,
       'cases-desc': t.casesDesc,
       'lets-work-title': t.letsWorkTitle,
@@ -78,7 +73,9 @@ export class LanguageController {
       if (el) el.textContent = value;
     }
 
-    const menuLabels = [t.menuHome, t.menuExpertise, t.menuCases];
+    // Areas of Expertise menu item was removed (its cards now live inside
+    // the home hero pin as panel 4) — only Home and Cases remain.
+    const menuLabels = [t.menuHome, t.menuCases];
     document.querySelectorAll<HTMLAnchorElement>('#header-menu-links > .header-menu-link').forEach((link, i) => {
       const label = menuLabels[i];
       if (!label) return;
@@ -101,12 +98,15 @@ export class LanguageController {
     const submitBtn = document.getElementById('contact-submit');
     if (submitBtn) submitBtn.setAttribute('aria-label', t.contactSubmitAria);
 
-    // End-section "CONTINUE TO SCROLL" uses duplicated marquee nodes
-    document.querySelectorAll<HTMLElement>('#end-bottom .end-bottom-text').forEach((el) => {
+    // "CONTINUE TO SCROLL" uses duplicated marquee nodes — shared by the
+    // Cases finale's #end-bottom and the home hero's #home-continue-pill
+    // (both reuse the same .end-bottom/.end-bottom-text markup+CSS).
+    document.querySelectorAll<HTMLElement>('.end-bottom .end-bottom-text').forEach((el) => {
       el.textContent = t.continueScroll;
     });
 
-    // Expertise cards (title + bullet list); letter badges S/B/T/G stay as-is
+    // Expertise cards (title + bullet list + mirrored footer title) — now
+    // panel 4 of the home hero pin, flip-from-back interaction restored.
     document.querySelectorAll<HTMLElement>('.about-capability-card').forEach((card, i) => {
       const copy = t.expertiseCards[i];
       if (!copy) return;
@@ -117,8 +117,6 @@ export class LanguageController {
         const text = copy.bullets[j];
         if (text !== undefined) li.textContent = text;
       });
-      // Mirrored footer duplicate (decorative, aria-hidden) — same title as
-      // the header, letter badge stays as-is.
       const footerTitle = card.querySelector<HTMLElement>('.about-capability-card-footer-title');
       if (footerTitle) footerTitle.textContent = copy.title;
     });

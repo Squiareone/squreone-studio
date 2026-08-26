@@ -5,9 +5,7 @@ export interface Copy {
   studioShort: string;
   introWelcome: string;
   heroTitle: string;
-  heroSecondary: string;
   storyTitle: string;
-  detailText: string;
   /**
    * New section right after the hero (before Areas of Expertise): a short
    * 4-step "how we work" pipeline (Strategy -> Design -> Production ->
@@ -19,10 +17,6 @@ export interface Copy {
   processEyebrow: string;
   processTitle: string;
   processSteps: { index: string; title: string; desc: string }[];
-  expertiseTitle: string;
-  expertiseTitleLine1: string;
-  expertiseTitleLine2: string;
-  expertiseSubtitle: string;
   /**
    * Four expertise cards: title + a short bullet list (replaced the single
    * paragraph so each card reads as scannable capability tags, matching a
@@ -59,7 +53,6 @@ export interface Copy {
   menu: string;
   menuClose: string;
   menuHome: string;
-  menuExpertise: string;
   menuCases: string;
 }
 
@@ -69,10 +62,7 @@ export const copy: Record<Lang, Copy> = {
     studioShort: "SquareOne",
     introWelcome: "Welcome to SquareOne",
     heroTitle: "Shaping Brands,\nOne at a Time",
-    heroSecondary: "We are a design-built studio.",
     storyTitle: "Crafting uniqueness for your business.",
-    detailText:
-      "From brand strategy to physical production and global supply chain, we handle it all - with an architect's rigor in material and cost, turning your ideas into premium, budget-friendly brand pieces built to travel.",
     processEyebrow: "How we work",
     processTitle: "One-stop service, concept to delivery.",
     processSteps: [
@@ -97,11 +87,6 @@ export const copy: Record<Lang, Copy> = {
         desc: "Global supply chain, fulfillment, and worldwide delivery.",
       },
     ],
-    expertiseTitle: "Areas of expertise",
-    expertiseTitleLine1: "AREA OF",
-    expertiseTitleLine2: "EXPERTISE",
-    expertiseSubtitle:
-      "We bring multidisciplinary expertise to every stage - from strategy and creative to sampling, quality control, mass production, and final delivery.",
     expertiseCards: [
       {
         title: "Strategic design",
@@ -173,7 +158,6 @@ export const copy: Record<Lang, Copy> = {
     menu: "Menu",
     menuClose: "Close",
     menuHome: "Home",
-    menuExpertise: "Areas of Expertise",
     menuCases: "Cases & Scenarios",
   },
   zh: {
@@ -181,10 +165,7 @@ export const copy: Record<Lang, Copy> = {
     studioShort: "大方",
     introWelcome: "欢迎来到大方的世界",
     heroTitle: "让每一件小物，都装得下品牌",
-    heroSecondary: "设计驱动,\n构建一切",
     storyTitle: "为您的品牌打造独特价值",
-    detailText:
-      "从品牌策略到实体制造与全球供应链，我们一站式为您打造 - 用建筑师般的严谨打磨材质与成本，让创意变成高级又实惠的品牌信物，随时随地带得走。",
     processEyebrow: "我们如何工作",
     processTitle: "一站式服务，创意到交付。",
     processSteps: [
@@ -209,12 +190,6 @@ export const copy: Record<Lang, Copy> = {
         desc: "全球供应链、履约与世界范围交付。",
       },
     ],
-    expertiseTitle: "专业领域",
-    // Single line for ZH (EN keeps AREA OF / EXPERTISE on two lines)
-    expertiseTitleLine1: "专业领域",
-    expertiseTitleLine2: "",
-    expertiseSubtitle:
-      "从策略、创意、打样、品控、量产与交付，我们以多领域专业能力，贯穿每一个环节。",
     expertiseCards: [
       {
         title: "策略设计",
@@ -247,7 +222,7 @@ export const copy: Record<Lang, Copy> = {
     ],
     letsWorkTitle: "合作，从这里开始",
     letsWorkSubtitle: "让你的创意，野蛮生长",
-    continueScroll: "继续向下滚动",
+    continueScroll: "继续滚动鼠标",
     contactLabel: "联系我们",
     contactHeading: "携手打造独一无二的品牌载体。",
     contactEnquiryLabel: "商务与项目咨询",
@@ -266,7 +241,6 @@ export const copy: Record<Lang, Copy> = {
     menu: "菜单",
     menuClose: "关闭",
     menuHome: "首页",
-    menuExpertise: "专业领域",
     menuCases: "案例与场景",
   },
 };

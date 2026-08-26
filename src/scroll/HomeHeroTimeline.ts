@@ -1,38 +1,9 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { bindLusionFaceCursor } from './LusionFaceCursor';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export type ScrollToFn = (target: string, opts?: { offset?: number }) => void;
-
-/**
- * Sequential multi-panel home (NOT left+right on same screen):
- *   panel1 Shaping Brands → panel2 We are a design-built → panel3 Story →
- *   panel4 Process overview (how we work)
- * Text motion still uses Lusion-style per-word opacity + translate3d for
- * panels 1-3; panel 4 is a simpler whole-panel fade (see applyProgress)
- * since its content is a grid of cards, not prose lines.
- */
-const RANGE_START_WAIT = 2.2;
-const RANGE_SLIDE_12 = 1.6;
-const RANGE_SLIDE_23 = 1.5;
-const RANGE_SLIDE_34 = 1.5;
-const RANGE_END_WAIT = 1.0;
-export const HOME_PIN_VH =
-  RANGE_START_WAIT + RANGE_SLIDE_12 + RANGE_SLIDE_23 + RANGE_SLIDE_34 + RANGE_END_WAIT;
-
-/** Same scrubbed progress as home pin visuals (story arrow must use this, not a raw ST). */
-const homeHeroProgressListeners = new Set<(p: number) => void>();
-let lastHomeHeroProgress = 0;
-
-function easeCubicOut(t: number): number {
-  return 1 - Math.pow(1 - t, 3);
-}
-
-function easeCubicInOut(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
 
 function fit(
   v: number,
@@ -47,498 +18,95 @@ function fit(
   return out0 + (out1 - out0) * e;
 }
 
-function units(root: HTMLElement | null): HTMLElement[] {
-  if (!root) return [];
-  return Array.from(root.querySelectorAll<HTMLElement>('.word-wrap'));
-}
-
 /**
- * Group word-wraps by visual line (offsetTop).
- * Lusion animates whole lines / keeps same-line words glued — different per-word x
- * causes "your" + "business" to overlap. Same line → same transform.
+ * Home hero: 4 discrete, gesture-paginated panels (not continuous scrub) —
+ *   1) Shaping Brands  2) Process overview ("One-stop service")
+ *   3) Story ("Crafting uniqueness...")  4) Expertise cards
+ *
+ * Rebuilt from a continuous scrub+pin design per feedback: "首页进来的时候
+ * 需要滑动3下才能到下一页...这里的过渡不太丝滑，可以改成一次就到下一页么？"
+ * One wheel/touch gesture now advances exactly one panel, mirroring the
+ * Cases & Scenarios section's own step pagination (see initCasesTimeline's
+ * goToStep further down — this ports the same proven pattern: intercept
+ * wheel/touch, tween the track + a scroll-position proxy together, lock
+ * out further input for a cooldown window). A fixed-duration GSAP tween
+ * drives each transition instead of tying it to scroll fraction, so it
+ * reads the same regardless of how fast/slow the gesture was — that
+ * inconsistency was very likely why the old scrub felt "not smooth".
  */
-function groupByLine(els: HTMLElement[]): HTMLElement[][] {
-  if (!els.length) return [];
-  const lines: HTMLElement[][] = [];
-  let row: HTMLElement[] = [];
-  let lastTop = Number.NaN;
+const STEP_COUNT = 4;
+const STEP_DURATION = 0.85;
+const CONTENT_DURATION_IN = 0.6;
+const CONTENT_DURATION_OUT = 0.4;
+const CONTENT_ENTER_DELAY = STEP_DURATION * 0.3;
+// Scroll "budget" reserved per step while pinned — doesn't need to map to
+// anything visually exact since panel position is driven by discrete step
+// state now, not by raw scroll fraction; just needs enough room for the
+// wheel/touch interception below to have somewhere to move the real scroll
+// position to (see goToStep's scroll-position proxy tween).
+const PIN_STEP_VH = 1.1;
+export const HOME_PIN_VH = (STEP_COUNT - 1) * PIN_STEP_VH;
+// Arriving at the last step (cards) while just browsing it stops just shy
+// of the pin's own scroll-position end boundary (1.0) instead of landing
+// exactly on it — sitting exactly at the boundary risks GSAP treating the
+// trigger as no-longer-active while the cards are still mid-entrance,
+// which would let native scroll slip through early. The explicit "leave to
+// Cases" action (scrollTo('#cases-scenarios')) is what actually carries
+// scroll position past the boundary and releases the pin, not arriving at
+// this step.
+const STEP_HOLD_P = 0.94;
 
-  // Force layout read after any previous transforms reset
-  els.forEach((el) => {
-    const top = el.offsetTop;
-    if (row.length && Math.abs(top - lastTop) > 3) {
-      lines.push(row);
-      row = [];
-    }
-    row.push(el);
-    lastTop = top;
-  });
-  if (row.length) lines.push(row);
-  return lines;
-}
-
-/** Apply identical x/opacity to every word on a line (no intra-line overlap). */
-function setLineMotion(line: HTMLElement[], x: number, opacity: number): void {
-  line.forEach((el) => {
-    gsap.set(el, { x, opacity, force3D: true });
-  });
-}
-
-export function initHomeHeroTimeline(onProgress?: (p: number) => void): () => void {
+export function initHomeHeroTimeline(scrollTo: ScrollToFn, onProgress?: (p: number) => void): () => void {
   const section = document.getElementById('home-hero');
   const pinEl = document.getElementById('home-hero-pin');
   const track = document.getElementById('home-hero-track');
-  const title = document.getElementById('hero-title');
-  const hint = document.getElementById('hero-scroll-hint');
-  const secondary = document.getElementById('hero-secondary-title');
-  const storyTitle = document.getElementById('story-detail-title');
-  const storyText = document.getElementById('story-detail-text');
-  const processPanel = document.getElementById('process-overview');
+  const continuePill = document.getElementById('home-continue-pill');
 
   if (!section || !pinEl || !track) return () => {};
 
-  gsap.killTweensOf([track, title, hint, secondary, storyTitle, storyText, pinEl, processPanel]);
-  gsap.killTweensOf(
-    '#hero-title .word-wrap, #hero-secondary-title .word-wrap, #story-detail-title .word-wrap, #story-detail-text .word-wrap',
+  const panels = Array.from(track.querySelectorAll<HTMLElement>('.home-panel'));
+  const panelInners = panels.map((p) => p.querySelector<HTMLElement>('.home-panel-inner'));
+  const processPanel = document.getElementById('process-overview');
+  const cardsPanel = document.getElementById('home-cards-panel');
+  const cardsGridEl = document.getElementById('home-cards-grid');
+  const expertiseCards = Array.from(
+    document.querySelectorAll<HTMLElement>('#home-cards-grid .about-capability-card'),
   );
+  const DESKTOP_FAN_MIN_WIDTH = 901;
+  // Same duration both directions, referenced by both animateCards (the
+  // card motion itself) and goToStep (which holds the panel in place and
+  // visible for this long before sliding away when leaving) so the exit
+  // is a true mirror of the entrance, not a shortened version of it — per
+  // feedback: "往回退的时候的交互跟进入的时候一样（反过来）".
+  const CARDS_ANIM_DURATION = 3.6;
+  let cardTween: gsap.core.Tween | null = null;
+  let cardIdleTweens: gsap.core.Tween[] = [];
+  let cardW = 0;
+  let cardOffset = 0;
+  let wrapperW = 0;
 
-  gsap.set(track, { x: 0, xPercent: 0, y: 0, force3D: true });
-  gsap.set('#hero-title .word', { yPercent: 0, autoAlpha: 1 });
-  if (processPanel) gsap.set(processPanel, { autoAlpha: 0, x: 60, y: 0, force3D: true });
-
-  const tHold = RANGE_START_WAIT / HOME_PIN_VH;
-  const tP2 = (RANGE_START_WAIT + RANGE_SLIDE_12) / HOME_PIN_VH;
-  const tP3 = (RANGE_START_WAIT + RANGE_SLIDE_12 + RANGE_SLIDE_23) / HOME_PIN_VH;
-  const tP4 = (RANGE_START_WAIT + RANGE_SLIDE_12 + RANGE_SLIDE_23 + RANGE_SLIDE_34) / HOME_PIN_VH;
-  // Once panel 4 (process-overview) has fully entered, its own internal
-  // step-by-step reveal (dots/lines/arrow — see the .is-visible CSS rules)
-  // takes over; only need to trigger that class once, not track it every
-  // frame.
-  let processRevealed = false;
-
-  // Cache line groups after layout is ready (refreshed on resize via onRefresh)
-  let titleLines: HTMLElement[][] = [];
-  let secondaryLines: HTMLElement[][] = [];
-  let storyTitleLines: HTMLElement[][] = [];
-  let storyTextLines: HTMLElement[][] = [];
-
-  const rebuildLines = () => {
-    // Reset transforms so offsetTop reflects true layout positions
-    const all = [
-      ...units(title),
-      ...units(secondary),
-      ...units(storyTitle),
-      ...units(storyText),
-    ];
-    all.forEach((el) => gsap.set(el, { x: 0, y: 0, clearProps: 'transform' }));
-    titleLines = groupByLine(units(title));
-    secondaryLines = groupByLine(units(secondary));
-    storyTitleLines = groupByLine(units(storyTitle));
-    storyTextLines = groupByLine(units(storyText));
-  };
-
-  const applyProgress = (p: number) => {
-    onProgress?.(p);
-    // Same scrubbed progress as the pin — story arrow must use this, not a raw ST
-    lastHomeHeroProgress = p;
-    homeHeroProgressListeners.forEach((fn) => fn(p));
-
-    const unit = Math.max(60, window.innerWidth * 0.08);
-
-    // 4 panels now (was 3) — each slide moves the track by 25% of its own
-    // width (400%-wide track / 4 panels), not 33.333%.
-    let xPercent = 0;
-    let slide12 = 0;
-    let slide23 = 0;
-    let slide34 = 0;
-
-    if (p <= tHold) {
-      xPercent = 0;
-    } else if (p <= tP2) {
-      slide12 = (p - tHold) / (tP2 - tHold);
-      xPercent = -25 * easeCubicInOut(slide12);
-    } else if (p <= tP3) {
-      slide12 = 1;
-      slide23 = (p - tP2) / (tP3 - tP2);
-      xPercent = -25 - 25 * easeCubicInOut(slide23);
-    } else if (p <= tP4) {
-      slide12 = 1;
-      slide23 = 1;
-      slide34 = (p - tP3) / (tP4 - tP3);
-      xPercent = -50 - 25 * easeCubicInOut(slide34);
-    } else {
-      slide12 = 1;
-      slide23 = 1;
-      slide34 = 1;
-      xPercent = -75;
-    }
-
-    gsap.set(track, { xPercent, x: 0, force3D: true });
-
-    if (hint) {
-      const hide = fit(p, tHold * 0.72, tHold + (tP2 - tHold) * 0.2, 0, 1, easeCubicOut);
-      gsap.set(hint, { opacity: 1 - hide, y: hide * unit * 1.2, force3D: true });
-    }
-
-    // Panel 1 — exit left, stagger by LINE only
-    if (!titleLines.length && units(title).length) rebuildLines();
-    titleLines.forEach((line, li) => {
-      const n = Math.max(1, titleLines.length - 1);
-      const s = n === 0 ? 0 : li / n;
-      if (slide12 <= 0.001) {
-        setLineMotion(line, 0, 1);
-        return;
-      }
-      const leave = fit(slide12, s * 0.1, 0.55 + s * 0.25, 0, 1, easeCubicOut);
-      const drift = fit(slide12, 0, 0.55, 0, -6, easeCubicOut);
-      setLineMotion(line, (leave * 1.2 + drift) * unit, 1 - leave * 0.98);
-    });
-
-    // Panel 2 — enter from right / exit left, stagger by LINE only
-    if (!secondaryLines.length && units(secondary).length) rebuildLines();
-    if (secondaryLines.length) {
-      secondaryLines.forEach((line, li) => {
-        const n = Math.max(1, secondaryLines.length - 1);
-        const s = n === 0 ? 0 : li / n;
-        const enter = fit(slide12, 0.1 + s * 0.08, 0.6 + s * 0.25, 0, 1, easeCubicOut);
-        const leave = fit(slide23, s * 0.08, 0.52 + s * 0.25, 0, 1, easeCubicOut);
-        const show = Math.max(0, enter - leave);
-        const x = ((1 - enter) * 7 - leave * 6) * unit;
-        setLineMotion(line, x, show);
-      });
-    } else if (secondary) {
-      const enter = fit(slide12, 0.18, 0.78, 0, 1, easeCubicOut);
-      const leave = fit(slide23, 0.05, 0.55, 0, 1, easeCubicOut);
-      gsap.set(secondary, {
-        x: ((1 - enter) * 8 - leave * 6) * unit,
-        opacity: Math.max(0, enter - leave),
-        force3D: true,
-      });
-    }
-
-    // Panel 3 title — enter from right, exit left (both slide23/slide34),
-    // same single leftward direction as panel 1's exit and panel 2's
-    // enter+exit — was entering from the left then leaving to the right,
-    // a direction reversal that read as "text jumping left-right" once
-    // panel 3 gained an exit motion this session. Fixed per feedback:
-    // "3的过渡效果太复杂了，文字左右来回太跳了，跟1，2对齐".
-    if (!storyTitleLines.length && units(storyTitle).length) rebuildLines();
-    if (storyTitleLines.length) {
-      storyTitleLines.forEach((line, li) => {
-        const n = Math.max(1, storyTitleLines.length - 1);
-        const s = n === 0 ? 0 : li / n;
-        const enter = fit(slide23, 0.06 + s * 0.1, 0.58 + s * 0.22, 0, 1, easeCubicOut);
-        const leave = fit(slide34, s * 0.1, 0.55 + s * 0.25, 0, 1, easeCubicOut);
-        const show = Math.max(0, enter - leave);
-        const x = (1 - enter) * 6.5 * unit - leave * 6 * unit;
-        setLineMotion(line, x, show);
-      });
-    } else if (storyTitle) {
-      const enter = fit(slide23, 0.12, 0.7, 0, 1, easeCubicOut);
-      const leave = fit(slide34, 0, 0.6, 0, 1, easeCubicOut);
-      gsap.set(storyTitle, {
-        x: (1 - enter) * 7 * unit - leave * 6 * unit,
-        opacity: Math.max(0, enter - leave),
-        force3D: true,
-      });
-    }
-
-    // Panel 3 body — enter from right (slide23), exit left (slide34). Was
-    // adding a POSITIVE leave offset (further right) instead of negative —
-    // that made the text slide in from the right toward center, then
-    // reverse and slide back out to the right, a genuine back-and-forth
-    // bounce. Fixed to continue in the same leftward direction it entered.
-    if (!storyTextLines.length && units(storyText).length) rebuildLines();
-    if (storyTextLines.length) {
-      storyTextLines.forEach((line, li) => {
-        const n = Math.max(1, storyTextLines.length - 1);
-        const s = n === 0 ? 0 : li / n;
-        const enter = fit(slide23, 0.15 + s * 0.12, 0.7 + s * 0.22, 0, 1, easeCubicOut);
-        const leave = fit(slide34, s * 0.1, 0.55 + s * 0.25, 0, 1, easeCubicOut);
-        const show = Math.max(0, enter - leave);
-        // whole line shares one x — "your" / "business" never cross
-        const x = (1 - enter) * 9 * unit - leave * 8 * unit;
-        setLineMotion(line, x, show);
-      });
-    } else if (storyText) {
-      const enter = fit(slide23, 0.25, 0.9, 0, 1, easeCubicOut);
-      const leave = fit(slide34, 0, 0.6, 0, 1, easeCubicOut);
-      gsap.set(storyText, {
-        x: (1 - enter) * 12 * unit - leave * 10 * unit,
-        opacity: Math.max(0, enter - leave),
-        force3D: true,
-      });
-    }
-
-    // Panel 4 (process-overview) — whole-panel fade + horizontal slide, not
-    // a per-line word stagger (its content is a card grid, not prose). Was
-    // a vertical rise (y) at first, but that broke the established
-    // language of panels 2/3 sliding in horizontally — switched to x so
-    // the 3→4 handoff reads the same way 2→3 does, per feedback: "3到4的
-    // 动效和2到3是一样的，字都往左滑走" (panel 3's own exit above already
-    // slides left the same way panel 1's exit does; this is the matching
-    // "slides in from the right" entrance for panel 4).
-    // Once it's most of the way in, flip on .is-visible once (not every
-    // frame) so the panel's own CSS-driven dot/line/arrow stagger (see
-    // home-hero.css) plays exactly once.
-    if (processPanel) {
-      const enter = fit(slide34, 0.15, 0.85, 0, 1, easeCubicOut);
-      gsap.set(processPanel, {
-        autoAlpha: enter,
-        x: (1 - enter) * 10 * unit,
-        y: 0,
-        force3D: true,
-      });
-      if (enter > 0.6 && !processRevealed) {
-        processRevealed = true;
-        processPanel.classList.add('is-visible');
-      }
-    }
-  };
-
-  const st = ScrollTrigger.create({
-    trigger: section,
-    start: 'top top',
-    end: () => `+=${window.innerHeight * HOME_PIN_VH}`,
-    scrub: 0.85,
-    pin: pinEl,
-    pinSpacing: true,
-    anticipatePin: 1,
-    invalidateOnRefresh: true,
-    onUpdate: (self) => applyProgress(self.progress),
-    onRefresh: (self) => {
-      rebuildLines();
-      applyProgress(self.progress);
-    },
-  });
-
-  // After pin layout settles, measure lines then paint frame 0
-  requestAnimationFrame(() => {
-    rebuildLines();
-    applyProgress(0);
-  });
-
-  return () => {
-    st.kill();
-  };
-}
-
-export function prepareHeroText(
-  i18n: { text: { heroTitle: string; heroSecondary: string; storyTitle: string; detailText: string } },
-  i18nCtrl: {
-    splitTextIntoWords: (el: HTMLElement) => HTMLSpanElement[];
-  },
-): void {
-  const title = document.getElementById('hero-title');
-  const secondary = document.getElementById('hero-secondary-title');
-  const storyTitle = document.getElementById('story-detail-title');
-  const detail = document.getElementById('story-detail-text');
-
-  const split = (el: HTMLElement | null, text: string) => {
-    if (!el) return;
-    gsap.killTweensOf(el);
-    gsap.killTweensOf(el.querySelectorAll('.word, .word-wrap'));
-    el.textContent = text;
-    i18nCtrl.splitTextIntoWords(el);
-  };
-
-  split(title, i18n.text.heroTitle);
-  split(secondary, i18n.text.heroSecondary);
-  split(storyTitle, i18n.text.storyTitle);
-  split(detail, i18n.text.detailText);
-}
-
-/**
- * story-next-arrow
- *
- * SHOW TIMING (product, not Lusion): original end-wait of home pin
- *   progress ∈ [endWaitStart, 0.999) using the SAME scrubbed pin progress
- *   as the panel visuals (applyProgress).
- *
- * MOTION (Lusion): #about-who-face-cursor math via bindLusionFaceCursor.
- *
- * Do not couple show timing to hover ramps beyond Lusion activeRatio entrance.
- */
-export function initStoryNextArrow(scrollTo: ScrollToFn): () => void {
-  const domCursor = document.getElementById('story-next-arrow');
-  const domCursorArrow = document.getElementById('story-next-arrow-svg');
-  if (!domCursor) return () => {};
-
-  // process-overview is now panel 4 of this same pin (not a separate
-  // section), so end-wait timing extends through RANGE_SLIDE_34 too, and
-  // this arrow's target reverts to about-capability — its original job:
-  // let people skip the pin's end-hold buffer straight into Expertise.
-  const endWaitStart =
-    (RANGE_START_WAIT + RANGE_SLIDE_12 + RANGE_SLIDE_23 + RANGE_SLIDE_34) / HOME_PIN_VH;
-  const aboutTarget = '#about-capability';
-  const aboutOffset = 0;
-  const WHEEL_TRIGGER_THRESHOLD = 180;
-  const WHEEL_RESET_GAP_MS = 240;
-  const LAST_FRAME_HOLD_MS = 420;
-
-  let atLastFrame = false;
-  let jumping = false;
-  let lastFrameEnteredAt = 0;
-  let wheelDownAccum = 0;
-  let lastWheelTs = 0;
-
-  const setMobileVisible = (show: boolean) => {
-    domCursor.classList.toggle('is-visible', show);
-  };
-
-  const syncFromProgress = (p: number) => {
-    const wasAtLastFrame = atLastFrame;
-    // Original threshold — unchanged
-    atLastFrame = p >= endWaitStart && p < 0.999;
-    if (atLastFrame && !wasAtLastFrame) {
-      lastFrameEnteredAt = performance.now();
-      wheelDownAccum = 0;
-      lastWheelTs = 0;
-    }
-    if (!atLastFrame && wasAtLastFrame) {
-      wheelDownAccum = 0;
-      lastWheelTs = 0;
-    }
-    setMobileVisible(atLastFrame && !jumping);
-  };
-  homeHeroProgressListeners.add(syncFromProgress);
-  syncFromProgress(lastHomeHeroProgress);
-
-  const jump = () => {
-    if (jumping) return;
-    jumping = true;
-    wheelDownAccum = 0;
-    lastWheelTs = 0;
-    setMobileVisible(false);
-    scrollTo(aboutTarget, { offset: aboutOffset });
-    window.setTimeout(() => {
-      jumping = false;
-      setMobileVisible(atLastFrame && !jumping);
-    }, 900);
-  };
-
-  const faceZone = document.getElementById('story-next-cursor-zone');
-
-  const faceCursor = bindLusionFaceCursor({
-    el: domCursor,
-    arrowEl: domCursorArrow,
-    // Lusion `c` — team subsection visible. We use original end-wait scroll gate.
-    isSectionActive: () => atLastFrame && !jumping,
-    /*
-     * Lusion: mouse must be over #about-who-team-faces (left mass), NOT team-right.
-     * We measure #story-next-cursor-zone (left ~70vw) every frame.
-     * Moving into the right copy area → overFace=false → scale-out / hide.
-     */
-    getFaceRect: () => {
-      if (faceZone) {
-        const r = faceZone.getBoundingClientRect();
-        return { x: r.left, y: r.top, width: r.width, height: r.height };
-      }
-      // Fallback: left 58% of viewport
-      return {
-        x: 0,
-        y: 0,
-        width: window.innerWidth * 0.58,
-        height: window.innerHeight,
-      };
-    },
-    isMobile: () => window.innerWidth <= 767,
-  });
-
-  const onDocClick = (e: MouseEvent) => {
-    if (!atLastFrame || jumping || window.innerWidth <= 767) return;
-    if (faceCursor.hitTest(e.clientX, e.clientY)) {
-      e.preventDefault();
-      jump();
-    }
-  };
-  document.addEventListener('click', onDocClick, true);
-
-  const onWheel = (e: WheelEvent) => {
-    // Keep click and wheel behavior consistent: from the last home frame,
-    // scrolling down should land on the same about-capability anchor.
-    if (!atLastFrame || jumping) return;
-    const now = performance.now();
-    // Keep button visible shortly after arriving at this frame.
-    if (now - lastFrameEnteredAt < LAST_FRAME_HOLD_MS) return;
-    if (e.deltaY <= 0) {
-      wheelDownAccum = 0;
-      lastWheelTs = now;
-      return;
-    }
-    if (now - lastWheelTs > WHEEL_RESET_GAP_MS) {
-      wheelDownAccum = 0;
-    }
-    lastWheelTs = now;
-    wheelDownAccum += e.deltaY;
-    if (wheelDownAccum >= WHEEL_TRIGGER_THRESHOLD) {
-      jump();
-    }
-  };
-  window.addEventListener('wheel', onWheel, { passive: true });
-
-  const onBtnClick = (e: Event) => {
-    if (window.innerWidth > 767) return;
-    e.preventDefault();
-    jump();
-  };
-  domCursor.addEventListener('click', onBtnClick);
+  let currentStep = 0;
+  let animating = false;
+  // Tracks the actual scroll-position proxy value last landed on — needed
+  // because step 3's resting value is STEP_HOLD_P, not 3/(STEP_COUNT-1),
+  // so the next transition's "from" has to read this instead of
+  // recomputing from currentStep (which would jump from the wrong point).
+  let lastProxyP = 0;
 
   /*
-   * Do NOT intercept wheel with preventDefault + programmatic jump.
-   * That fights Lenis at the home↔expertise boundary and feels like a hitch
-   * both scrolling down into expertise and back up into the pin.
-   * Natural pin end releases into #about-capability; click still jumps.
+   * Cards: literal port of the original "Area of Expertise" section's
+   * per-frame fan/flip formulas (applyCardsFromSection in the pre-
+   * restructure HomeHeroTimeline), per feedback: "卡片的动效一一模一样".
+   * That version derived everything from a continuous `screenRatio`
+   * (roughly -1..1 as the section scrolled through view). This panel has
+   * no scroll runway to derive that from (fixed 100vh, one discrete
+   * step), so instead a synthetic screenRatio is swept from -1 to 1 over
+   * a fixed duration by GSAP the moment the panel becomes the active step
+   * — every other formula below (n/a/l progress curves, easeExpoOut,
+   * easeBackInOut, easeExpoInOut, the per-card fan target/flip/wobble) is
+   * unchanged from the original, so the motion *shape* is identical; only
+   * the time source changed from "scroll position" to "elapsed seconds".
    */
-  return () => {
-    homeHeroProgressListeners.delete(syncFromProgress);
-    faceCursor();
-    document.removeEventListener('click', onDocClick, true);
-    window.removeEventListener('wheel', onWheel);
-    domCursor.removeEventListener('click', onBtnClick);
-  };
-}
-
-/**
- * AREA OF EXPERTISE — Lusion AboutCapabilitySection port.
- *
- * Key Lusion rules we previously got wrong:
- * 1) Card fan uses SECTION screenRatio (not wrapper ST progress)
- * 2) Vertical motion is getEaseInOutOffset over viewportHeight*3
- *    (not a harsh mid-viewport map that flings cards up)
- * 3) Long cards-wrapper margin (~300vh) so section stays active while animating
- * 4) No S/B/T/G letter chips (not in original SquareOne design)
- */
-export function initCapabilityTimeline(): () => void {
-  const section = document.getElementById('about-capability');
-  const title = document.getElementById('about-capability-title');
-  const line1 = document.getElementById('about-capability-title-line-1');
-  const line2 = document.getElementById('about-capability-title-line-2');
-  const subText = document.getElementById('about-capability-subheader-text');
-  const cardsWrapper = document.getElementById('about-capability-cards-wrapper');
-  const cardsEl = document.getElementById('about-capability-cards');
-  const cards = Array.from(document.querySelectorAll<HTMLElement>('.about-capability-card'));
-
-  if (!section || !title || !line1 || !line2 || !subText || !cardsWrapper || !cardsEl || !cards.length) {
-    return () => {};
-  }
-
-  const NUMBER_OF_CARDS = cards.length;
-  const DESKTOP_FAN_MIN_WIDTH = 901;
-  let titleTime = 0;
-  let needsReset = true;
-  let sectionActive = false;
-  let titleInView = false;
-  let line2TranslateX = 0;
-  let cardW = 0;
-  let wrapperW = 0;
-  let cardOffset = 0;
-  let elapsed = 0;
-
-  const easeLusion = (t: number) => {
-    const x = Math.min(1, Math.max(0, t));
-    return x * x * (3 - 2 * x);
-  };
   const easeExpoOut = (t: number) => {
     const x = Math.min(1, Math.max(0, t));
     return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
@@ -560,308 +128,418 @@ export function initCapabilityTimeline(): () => void {
     return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
   };
 
-  /**
-   * Port of Lusion scrollManager.getEaseInOutOffset(e, t, r=0, n=0.5)
-   * Cards call: getEaseInOutOffset(e, viewportHeight * 3, 5, 1)
-   */
-  const getEaseInOutOffset = (e: number, t: number, r = 0, n = 0.5): number => {
-    const a = 1.5 + n;
-    const l = (a - 1) * 2 + r;
-    const c = 0;
-    const u = a;
-    const f = u + r;
-    const p = f + a;
-    const g = (t * p) / l;
-    const v = e + g * 0.5 - t * 0.5;
-    const _ = Math.min(1, v / g);
-    if (!(_ > 0)) return 0;
-    const M = _ * p;
-    let T = M;
-    if (M > c && M <= u) {
-      const S = (M - c) / (u - c);
-      // cubicBezier(c, (u-c)/3+c, 1, 1, S) simplified ≈ ease toward 1
-      T = c + (1 - c) * (S * S * (3 - 2 * S));
-    } else if (M > u && M <= f) {
-      T = 1;
-    } else if (M > f && M <= p) {
-      const S = (M - f) / (p - f);
-      T = 1 + (2 - 1) * (S * S * (3 - 2 * S));
-      // ease from 1 toward 2
-      T = 1 + S * S * (3 - 2 * S);
-    } else if (M > p) {
-      T = M - l;
-    }
-    return ((M - T) / l) * t;
-  };
-
-  /** Lusion ScrollDomRange.screenRatio approx from getBoundingClientRect */
-  const getScreenRatio = (el: HTMLElement): number => {
-    const rect = el.getBoundingClientRect();
-    const vh = window.innerHeight;
-    // fit(rect.top, vh, -height, -1, 1)
-    return fit(rect.top, vh, -rect.height, -1, 1);
-  };
-
-  const splitTitle = () => {
-    const prepLine = (lineEl: HTMLElement) => {
-      const raw = (lineEl.textContent || '').replace(/\s+/g, ' ').trim();
-      lineEl.replaceChildren();
-      // ZH uses one line only (line2 empty) — hide so it does not take a row
-      if (!raw) {
-        lineEl.style.display = 'none';
-        lineEl.setAttribute('aria-hidden', 'true');
-        return;
-      }
-      lineEl.style.display = '';
-      lineEl.removeAttribute('aria-hidden');
-      const mask = document.createElement('div');
-      mask.className = 'cap-line-mask';
-      // CJK titles have no spaces — treat whole string as one unit
-      const tokens = /[\u3400-\u9fff]/.test(raw) ? [raw] : raw.split(' ').filter(Boolean);
-      tokens.forEach((w, i, arr) => {
-        const word = document.createElement('span');
-        word.className = 'cap-word';
-        word.textContent = w;
-        if (i < arr.length - 1) word.style.marginRight = '0.28em';
-        mask.appendChild(word);
-      });
-      lineEl.appendChild(mask);
-    };
-    prepLine(line1);
-    prepLine(line2);
-  };
-
-  const splitSubheader = () => {
-    const raw = (subText.textContent || '').replace(/\s+/g, ' ').trim();
-    if (!raw) return;
-    subText.textContent = '';
-    const words = raw.split(' ');
-    const mid = Math.ceil(words.length / 2);
-    const chunks = [words.slice(0, mid).join(' '), words.slice(mid).join(' ')].filter(Boolean);
-    chunks.forEach((chunk) => {
-      const mask = document.createElement('div');
-      mask.className = 'cap-line-mask';
-      const line = document.createElement('span');
-      line.className = 'cap-line';
-      line.textContent = chunk;
-      mask.appendChild(line);
-      subText.appendChild(mask);
-    });
-  };
-
-  const getTitleWords = () => Array.from(title.querySelectorAll<HTMLElement>('.cap-word'));
-  const getSubLines = () => Array.from(subText.querySelectorAll<HTMLElement>('.cap-line'));
-
-  const resetTitleAnim = () => {
-    titleTime = 0;
-    needsReset = false;
-    getTitleWords().forEach((w) => {
-      w.style.transform = 'translate3d(0, 100%, 0)';
-    });
-    getSubLines().forEach((l) => {
-      l.style.transform = 'translate3d(0, 110%, 0)';
-    });
-  };
-
-  const measure = () => {
-    const first = cards[0];
-    if (!first) return;
-    // Clear transforms so width/height reflect CSS layout, not fan offsets
-    cards.forEach((c) => {
-      c.style.transform = 'none';
-    });
-    cardsEl.style.transform = 'none';
-
-    wrapperW = cardsWrapper.clientWidth || cardsWrapper.getBoundingClientRect().width;
-    // offsetWidth after transform:none = CSS calc((100% - gap*3)/4) in real px
-    cardW = first.offsetWidth || first.getBoundingClientRect().width;
-    if (!(cardW > 0) && wrapperW > 0) {
-      // Fallback if not laid out yet — approximate 4-up with typical gap
-      cardW = wrapperW / NUMBER_OF_CARDS;
-    }
-    const cardH =
-      first.offsetHeight ||
-      first.getBoundingClientRect().height ||
-      cardW * (438 / 314);
-
+  /** measure() port — card/wrapper geometry the fan math is built on. */
+  const measureCards = () => {
+    if (!expertiseCards.length || !cardsGridEl) return;
+    expertiseCards.forEach((c) => gsap.set(c, { clearProps: 'transform' }));
+    wrapperW = cardsGridEl.clientWidth || cardsGridEl.getBoundingClientRect().width;
+    const first = expertiseCards[0];
+    cardW = first.offsetWidth || wrapperW / expertiseCards.length;
+    if (!(cardW > 0) && wrapperW > 0) cardW = wrapperW / expertiseCards.length;
+    const cardH = first.offsetHeight || cardW * (438 / 314);
     if (window.innerWidth >= DESKTOP_FAN_MIN_WIDTH) {
-      cardsEl.style.height = `${cardH}px`;
+      cardsGridEl.style.height = `${cardH}px`;
     } else {
-      cardsEl.style.height = 'auto';
+      cardsGridEl.style.height = 'auto';
     }
-    // Space between first and last card when fully fanned (Lusion cardOffset)
-    cardOffset = Math.max(0, wrapperW - cardW * NUMBER_OF_CARDS);
-    const l1 = line1.getBoundingClientRect();
-    // line2 may be empty/hidden in ZH — only measure offset when it has content
-    if (line2.querySelector('.cap-word')) {
-      const l2 = line2.getBoundingClientRect();
-      line2TranslateX = l2.left - l1.left;
-    } else {
-      line2TranslateX = 0;
-    }
+    cardOffset = Math.max(0, wrapperW - cardW * expertiseCards.length);
   };
 
-  const applyTitle = () => {
-    // Rebuild when i18n wiped text (no .cap-word on line1).
-    // Do NOT require line2 words — ZH keeps line2 empty on purpose.
-    if (!line1.querySelector('.cap-word')) {
-      splitTitle();
-      measure();
-      resetTitleAnim();
-    }
-    if (!subText.querySelector('.cap-line')) {
-      splitSubheader();
-      resetTitleAnim();
-    }
-
-    const words = getTitleWords();
-    // EN: first 2 words = "AREA OF" (line1); rest = "EXPERTISE" (line2, with left offset).
-    // ZH: single word "专业领域" on line1 only — all use the line1 y-entrance.
-    const line1WordCount = line1.querySelectorAll('.cap-word').length || 2;
-    words.forEach((u, f) => {
-      if (window.innerWidth <= 767) {
-        u.style.transform = 'translate3d(0, 0, 0)';
-        return;
-      }
-      if (f < line1WordCount) {
-        const py = fit(titleTime - f / 10, 0, 1, 100, 0, easeLusion);
-        u.style.transform = `translate3d(0, ${py}%, 0)`;
-      } else {
-        const px = fit(titleTime - f / 10, 1, 2, -line2TranslateX, 0, easeLusion);
-        const py = fit(titleTime - f / 10, 0.1, 1.1, -100, 0, easeLusion);
-        u.style.transform = `translate3d(${px}px, ${py}%, 0)`;
-      }
-    });
-    getSubLines().forEach((u, f) => {
-      const g = titleInView ? Math.min(1, Math.max(0, titleTime - f / 10 - 0.25)) : 0;
-      const v = window.innerWidth >= 768 ? easeExpoOut(g) : 1;
-      u.style.transform = `translate3d(0, ${fit(v, 0, 1, 110, 0)}%, 0)`;
-    });
-  };
-
-  const applyCardsFromSection = (dt: number) => {
-    elapsed += dt;
-    const isDesktop = window.innerWidth >= DESKTOP_FAN_MIN_WIDTH;
-    // CRITICAL: use SECTION screenRatio like Lusion (t.screenRatio on domContainer)
-    const screenRatio = getScreenRatio(section);
-
+  /** applyCardsFromSection port — one frame of the fan/flip/wobble. */
+  const applyCardsFrame = (screenRatio: number, elapsed: number) => {
     const n = fit(screenRatio, -0.6, 0.2, 0, 1);
     const a = fit(screenRatio, -0.5, 0.7, 0, 1);
     const l = fit(screenRatio, -0.5, 0.7, -Math.PI / 2, Math.PI - Math.PI / 2);
+    const nCards = expertiseCards.length;
 
-    if (isDesktop) {
-      if (!(wrapperW > 0) || !(cardW > 0)) measure();
-
-      // Lusion vertical offset: getEaseInOutOffset(e, vh*3, 5, 1)
-      // e = -rect.top + (vh - height) * 0.5  (center-to-center scroll metric)
-      const wrapRect = cardsWrapper.getBoundingClientRect();
-      const vh = window.innerHeight;
-      const e = -wrapRect.top + (vh - wrapRect.height) * 0.5;
-      const f = getEaseInOutOffset(e, vh * 3, 5, 1);
-      cardsEl.style.transform = `translate3d(0, ${f}px, 0)`;
-
-      const nCards = NUMBER_OF_CARDS;
-      const span =
-        nCards > 1 ? wrapperW + cardOffset / (nCards - 1) : wrapperW;
+    if (window.innerWidth >= DESKTOP_FAN_MIN_WIDTH) {
+      const span = nCards > 1 ? wrapperW + cardOffset / (nCards - 1) : wrapperW;
       const center = Math.max(0, wrapperW / 2 - cardW / 2);
-
       for (let p = 0; p < nCards; p++) {
-        const v = cards[p];
-        // Lusion: target = p/N * (wrapperW + cardOffset/(N-1))
-        // clamp so last card's left edge stays within wrapper (no right blank / left bleed)
-        const target = Math.min(
-          Math.max(0, wrapperW - cardW),
-          (p / nCards) * span,
-        );
+        const el = expertiseCards[p];
+        const target = Math.min(Math.max(0, wrapperW - cardW), (p / nCards) * span);
         const M = fit(n, 0.2, 1, center, target, easeExpoOut);
         const S = fit(a, 0, 0.7 - Math.abs(nCards - 1 - p) / 20, 180, 0, easeBackInOut);
         const b = fit(Math.abs(fit(n, 0, 0.75, 0, 1) * 2 - 1), 1, 0, 0, (p - 1.5) * 9, easeExpoInOut);
         const C = Math.cos(elapsed * 3 + p) * Math.cos(l);
-        v.style.transform = `translate3d(${M}px, ${C * 10}px, 0) rotateZ(${b}deg) rotate3d(0, 1, 0, ${S}deg)`;
+        gsap.set(el, { x: M, y: C * 10, rotationZ: b, rotationY: S, force3D: true });
       }
     } else {
-      cardsEl.style.transform = 'none';
-      cards.forEach((v, p) => {
-        const ratio = getScreenRatio(v);
-        const T = fit(ratio, -0.85 - (p % 2) / 10, 0, 180, 0, easeCubicInOut);
-        v.style.transform = `rotateY(${T}deg)`;
+      // Below the fan tier, cards sit in normal flow (static grid) — just
+      // flip in place, same as the original's own mobile fallback.
+      expertiseCards.forEach((el, p) => {
+        const T = fit(screenRatio, -0.85 - (p % 2) / 10, 0, 180, 0, easeCubicInOut);
+        gsap.set(el, { rotationY: T, x: 0, y: 0, rotationZ: 0, force3D: true });
       });
     }
   };
 
-  const sectionST = ScrollTrigger.create({
-    trigger: section,
-    start: 'top bottom',
-    end: 'bottom top',
-    onUpdate: (self) => {
-      sectionActive = self.isActive;
-      if (sectionActive && needsReset) resetTitleAnim();
-      if (!sectionActive) needsReset = true;
-    },
-    onEnter: () => {
-      sectionActive = true;
-      if (needsReset) resetTitleAnim();
-    },
-    onEnterBack: () => {
-      sectionActive = true;
-      if (needsReset) resetTitleAnim();
-    },
-    onLeave: () => {
-      sectionActive = false;
-      needsReset = true;
-    },
-    onLeaveBack: () => {
-      sectionActive = false;
-      needsReset = true;
-    },
-  });
+  const animateCards = (active: boolean) => {
+    if (!expertiseCards.length) return;
+    cardTween?.kill();
+    cardIdleTweens.forEach((t) => t.kill());
+    cardIdleTweens = [];
+    measureCards();
+    const proxy = { r: active ? -1 : 1 };
+    applyCardsFrame(proxy.r, 0);
+    // Same gradual duration both directions — the original was purely
+    // scroll-linked, so scrolling back out played through the identical
+    // curve just as slowly as scrolling in did. Per feedback: "收回的时候
+    // 也要有同样的动效" (retracting should have the same motion too), and
+    // slowed further per follow-up: "还得慢一点，看清楚背后的纹路才行" (slow
+    // enough to actually see the card-back pattern while it's turned).
+    const duration = CARDS_ANIM_DURATION;
+    const startTime = performance.now();
+    cardTween = gsap.to(proxy, {
+      r: active ? 1 : -1,
+      duration,
+      ease: 'none',
+      onUpdate: () => applyCardsFrame(proxy.r, (performance.now() - startTime) / 1000),
+      onComplete: () => {
+        if (!active) return;
+        // The original's per-card wobble (the `C = cos(elapsed*3+p)*cos(l)`
+        // term in applyCardsFrame) fades out once fully settled — but per
+        // feedback the cards should keep a small persistent float once
+        // expanded ("展开后卡片也是悬浮有一点点动的效果"), so once the
+        // formula-driven entrance finishes, hand off to a slow continuous
+        // idle bob (phase-offset per card) that keeps running while this
+        // panel stays the active step.
+        cardIdleTweens = expertiseCards.map((el, i) =>
+          gsap.to(el, {
+            y: `+=${5 + (i % 2) * 2}`,
+            rotationZ: `+=${i % 2 === 0 ? 1.2 : -1.2}`,
+            duration: 1.9 + i * 0.2,
+            ease: 'sine.inOut',
+            yoyo: true,
+            repeat: -1,
+          }),
+        );
+      },
+    });
+  };
 
-  const titleST = ScrollTrigger.create({
-    trigger: title,
-    start: 'top bottom',
-    end: 'bottom top',
-    onUpdate: (self) => {
-      // Lusion: titleTime advances when title.screenRatio > -1 (in/near view)
-      titleInView = self.isActive;
-    },
+  gsap.killTweensOf(track);
+  gsap.killTweensOf(panelInners.filter((el): el is HTMLElement => !!el));
+  gsap.set(track, { xPercent: 0, x: 0, force3D: true });
+  panelInners.forEach((el, i) => {
+    if (!el) return;
+    gsap.set(el, { autoAlpha: i === 0 ? 1 : 0, x: 0, force3D: true });
   });
+  processPanel?.classList.remove('is-visible');
+  cardsPanel?.classList.remove('is-visible');
+  continuePill?.classList.remove('is-visible');
 
-  // Drive cards every frame from live section geometry (not a short scrub range)
-  const ticker = (_time: number, delta: number) => {
-    const dt = Math.min(0.05, delta / 1000);
-    if (sectionActive) {
-      if (titleInView) {
-        titleTime += dt;
-        applyTitle();
+  const animatePanels = (from: number, to: number, outDelay = 0) => {
+    const dir = to > from ? 1 : -1;
+    panelInners.forEach((el, i) => {
+      if (!el) return;
+      gsap.killTweensOf(el);
+      if (i === to) {
+        gsap.fromTo(
+          el,
+          { autoAlpha: 0, x: dir * 48 },
+          {
+            autoAlpha: 1,
+            x: 0,
+            duration: CONTENT_DURATION_IN,
+            ease: 'power2.out',
+            delay: outDelay + CONTENT_ENTER_DELAY,
+            force3D: true,
+          },
+        );
+      } else if (i === from) {
+        gsap.to(el, {
+          autoAlpha: 0,
+          x: -dir * 48,
+          duration: CONTENT_DURATION_OUT,
+          ease: 'power2.in',
+          delay: outDelay,
+          force3D: true,
+        });
       }
-      applyCardsFromSection(dt);
-    }
-  };
-  gsap.ticker.add(ticker);
-
-  const onResize = () => {
-    measure();
-    applyTitle();
-    applyCardsFromSection(0);
+    });
   };
 
-  splitTitle();
-  splitSubheader();
-  requestAnimationFrame(() => {
-    measure();
-    resetTitleAnim();
-    applyCardsFromSection(0);
-    ScrollTrigger.refresh();
+  const setPanelClasses = (idx: number) => {
+    // Reveal-on-arrival stagger classes (dot/card timing lives in CSS via
+    // transition-delay) — toggled off first so re-entering a panel replays
+    // the stagger instead of just staying in its already-revealed state.
+    processPanel?.classList.toggle('is-visible', idx === 1);
+    cardsPanel?.classList.toggle('is-visible', idx === 3);
+    continuePill?.classList.toggle('is-visible', idx === STEP_COUNT - 1);
+    animateCards(idx === 3);
+  };
+
+  const st = ScrollTrigger.create({
+    trigger: section,
+    start: 'top top',
+    end: () => `+=${window.innerHeight * HOME_PIN_VH}`,
+    pin: pinEl,
+    pinSpacing: true,
+    anticipatePin: 1,
+    invalidateOnRefresh: true,
+    onRefresh: () => {
+      gsap.set(track, { xPercent: -(currentStep * (100 / STEP_COUNT)) });
+      panelInners.forEach((el, i) => {
+        if (!el) return;
+        gsap.set(el, { autoAlpha: i === currentStep ? 1 : 0, x: 0 });
+      });
+    },
+    // #home-continue-pill is position:fixed, so once scrolled past this
+    // pinned section it would otherwise stay stuck on screen (still
+    // .is-visible from step 3) all the way through Cases & Scenarios'
+    // intro frame — it should only ever be visible while pinned on the
+    // cards step. Per feedback: "这里没有，只有出现 let's work together
+    // 的时候才有" (Cases & Scenarios' own #end-bottom, further down that
+    // section's own timeline, is what should show a "continue" pill there
+    // instead — this one is unrelated to it).
+    onLeave: () => continuePill?.classList.remove('is-visible'),
+    onLeaveBack: () => continuePill?.classList.remove('is-visible'),
+    onEnterBack: () => continuePill?.classList.toggle('is-visible', currentStep === STEP_COUNT - 1),
   });
 
-  window.addEventListener('resize', onResize);
+  let stepUnlockTimer = 0;
+
+  const goToStep = (next: number) => {
+    const clamped = Math.min(STEP_COUNT - 1, Math.max(0, next));
+    if (clamped === currentStep || animating) return;
+    animating = true;
+    const from = currentStep;
+    currentStep = clamped;
+
+    // Leaving the cards panel holds the slide/fade until the retract has
+    // fully played (same duration as the entrance) — a true mirror of
+    // entering, where the panel is already in place and visible for the
+    // whole fan/flip. Per feedback: "往回退的时候的交互跟进入的时候一样
+    // （反过来）" (going back should be the same interaction as coming in,
+    // just reversed).
+    const outDelay = from === 3 ? CARDS_ANIM_DURATION : 0;
+
+    // Entering the cards panel: the horizontal slide itself only takes
+    // STEP_DURATION, but the cards' own fan/flip entrance keeps playing
+    // for CARDS_ANIM_DURATION afterward. `animating` used to clear right
+    // when the slide finished, so a single trackpad flick's momentum tail
+    // could still be feeding wheel events at that point and immediately
+    // trigger the NEXT step (or the leave-to-Cases threshold) before the
+    // cards had even finished appearing — the whole panel got skipped.
+    // Per feedback: "9秒开始滑动到卡片的页面，根本没看到卡片，直接滑动到
+    // 下面的页面了". Holding the lock for the full card-animation duration
+    // here (mirroring the symmetric hold already used when leaving) fixes
+    // it — momentum scroll dies down well within that window.
+    const enterHold = clamped === 3 ? CARDS_ANIM_DURATION : 0;
+    const unlockAfterMs = (outDelay + STEP_DURATION + enterHold) * 1000;
+
+    gsap.to(track, {
+      xPercent: -(clamped * (100 / STEP_COUNT)),
+      duration: STEP_DURATION,
+      delay: outDelay,
+      ease: 'power3.inOut',
+      force3D: true,
+    });
+
+    window.clearTimeout(stepUnlockTimer);
+    stepUnlockTimer = window.setTimeout(() => {
+      animating = false;
+    }, unlockAfterMs);
+
+    animatePanels(from, clamped, outDelay);
+    setPanelClasses(clamped);
+
+    // Keep the underlying scroll position (and the WebGL camera progress
+    // callback, via onProgress) tweening in step with the visual transition
+    // — same technique as Cases & Scenarios' own goToStep below. Target
+    // caps at STEP_HOLD_P (not 1.0) when landing on the cards step, so
+    // resting there never sits exactly on the pin's end boundary — see
+    // STEP_HOLD_P's own comment above for why that matters.
+    const targetP = clamped === STEP_COUNT - 1 ? STEP_HOLD_P : clamped / (STEP_COUNT - 1);
+    const proxy = { p: lastProxyP };
+    gsap.to(proxy, {
+      p: targetP,
+      duration: STEP_DURATION,
+      delay: outDelay,
+      ease: 'power3.inOut',
+      onUpdate: () => {
+        st.scroll(st.start + (st.end - st.start) * proxy.p);
+        onProgress?.(proxy.p);
+      },
+    });
+    lastProxyP = targetP;
+  };
+
+  // Actually departing the pin (as opposed to just resting on the cards
+  // step at STEP_HOLD_P) — reports full progress once here so main.ts's
+  // homePinActive flips over to real-scroll-driven camera progress at the
+  // moment the user truly leaves, not when they merely arrive at step 3.
+  const leaveToCases = () => {
+    onProgress?.(1);
+    scrollTo('#cases-scenarios', {});
+  };
+
+  const WHEEL_TRIGGER_THRESHOLD = 40;
+  const WHEEL_RESET_GAP_MS = 260;
+  const WHEEL_COOLDOWN = 900;
+  const TOUCH_THRESHOLD = 40;
+  let locked = false;
+  let lockTimer = 0;
+  let wheelAccum = 0;
+  let lastWheelTs = 0;
+
+  const lock = () => {
+    locked = true;
+    window.clearTimeout(lockTimer);
+    lockTimer = window.setTimeout(() => {
+      locked = false;
+    }, WHEEL_COOLDOWN);
+  };
+
+  const onWheel = (e: WheelEvent) => {
+    // `animating` (our own explicit hold, extended through the cards'
+    // full entrance/retract) MUST be checked before st.isActive — the
+    // proxy scroll position sits right at the pin's own end boundary once
+    // step 3 is reached, which could make GSAP briefly report the trigger
+    // as inactive on its own; if that check ran first it would bail out
+    // WITHOUT calling preventDefault, letting native scroll slip straight
+    // through and skip the cards panel entirely regardless of how long
+    // `animating` was held. Per feedback: "第3秒的时候还是整个页面卡片都
+    // 没展示清楚，就跳走啦" — this was still happening after the previous
+    // hold-duration fix specifically because of that bypass order.
+    if (animating) {
+      e.preventDefault();
+      wheelAccum = 0;
+      return;
+    }
+    if (!st.isActive) {
+      wheelAccum = 0;
+      return;
+    }
+    const dir = e.deltaY > 0 ? 1 : -1;
+    if (currentStep === 0 && dir < 0) {
+      wheelAccum = 0;
+      return; // let it scroll up out of the pin normally
+    }
+    // Leaving the last (cards) step forward now requires the same
+    // deliberate full-gesture threshold as every other step transition
+    // (below) instead of releasing the pin on the very first wheel tick —
+    // per feedback: "这里的时候页面固定住，不能飘，不要自动往下，需要用户
+    // 点击页面或滑动鼠标才能到下一个模块". preventDefault always runs while
+    // pinned now, so nothing drifts until that gesture (or the pill click)
+    // actually happens.
+    e.preventDefault();
+    if (locked) return;
+    const now = performance.now();
+    if (now - lastWheelTs > WHEEL_RESET_GAP_MS) wheelAccum = 0;
+    lastWheelTs = now;
+    wheelAccum += e.deltaY;
+    if (Math.abs(wheelAccum) < WHEEL_TRIGGER_THRESHOLD) return;
+    wheelAccum = 0;
+    lock();
+    if (currentStep === STEP_COUNT - 1 && dir > 0) {
+      leaveToCases();
+      return;
+    }
+    goToStep(currentStep + dir);
+  };
+  window.addEventListener('wheel', onWheel, { passive: false });
+
+  let touchStartY = 0;
+  let touchHandled = false;
+  const onTouchStart = (e: TouchEvent) => {
+    touchStartY = e.touches[0]?.clientY ?? 0;
+    touchHandled = false;
+  };
+  const onTouchMove = (e: TouchEvent) => {
+    // Same ordering fix as onWheel above — animating must be checked (and
+    // preventDefault called) before st.isActive, otherwise a touch event
+    // arriving right as the pin sits at its end boundary can slip through
+    // untouched and skip the panel.
+    if (animating) {
+      e.preventDefault();
+      return;
+    }
+    if (!st.isActive || touchHandled || locked) return;
+    const y = e.touches[0]?.clientY ?? touchStartY;
+    const delta = touchStartY - y;
+    const dir = delta > 0 ? 1 : -1;
+    if (currentStep === 0 && dir < 0) return;
+    // Same full-swipe requirement leaving the last step forward as the
+    // wheel handler above — no more releasing on first touch movement.
+    if (Math.abs(delta) < TOUCH_THRESHOLD) {
+      e.preventDefault();
+      return;
+    }
+    e.preventDefault();
+    touchHandled = true;
+    lock();
+    if (currentStep === STEP_COUNT - 1 && dir > 0) {
+      leaveToCases();
+      return;
+    }
+    goToStep(currentStep + dir);
+  };
+  window.addEventListener('touchstart', onTouchStart, { passive: true });
+  window.addEventListener('touchmove', onTouchMove, { passive: false });
+
+  const onPillClick = (e: Event) => {
+    e.preventDefault();
+    leaveToCases();
+  };
+  continuePill?.addEventListener('click', onPillClick);
+
+  // Keep the fanned/flipped cards aligned with their (re-measured) grid
+  // slots across a viewport resize/orientation change — snaps instantly to
+  // the rest frame (screenRatio = 1) rather than replaying the entrance.
+  const onCardsResize = () => {
+    if (currentStep !== 3 || !expertiseCards.length) return;
+    cardTween?.kill();
+    cardIdleTweens.forEach((t) => t.kill());
+    cardIdleTweens = [];
+    measureCards();
+    applyCardsFrame(1, 0);
+    cardIdleTweens = expertiseCards.map((el, i) =>
+      gsap.to(el, {
+        y: `+=${5 + (i % 2) * 2}`,
+        rotationZ: `+=${i % 2 === 0 ? 1.2 : -1.2}`,
+        duration: 1.9 + i * 0.2,
+        ease: 'sine.inOut',
+        yoyo: true,
+        repeat: -1,
+      }),
+    );
+  };
+  window.addEventListener('resize', onCardsResize);
 
   return () => {
-    sectionST.kill();
-    titleST.kill();
-    gsap.ticker.remove(ticker);
-    window.removeEventListener('resize', onResize);
+    st.kill();
+    window.removeEventListener('wheel', onWheel);
+    window.removeEventListener('touchstart', onTouchStart);
+    window.removeEventListener('touchmove', onTouchMove);
+    continuePill?.removeEventListener('click', onPillClick);
+    window.removeEventListener('resize', onCardsResize);
+    window.clearTimeout(lockTimer);
+    window.clearTimeout(stepUnlockTimer);
+    cardTween?.kill();
+    cardIdleTweens.forEach((t) => t.kill());
   };
+}
+
+/**
+ * Splits #hero-title into `.word` spans for IntroSequence's page-load
+ * reveal and the language-toggle fromTo animation in main.ts — the only
+ * remaining consumer of word-level splitting now that panel transitions
+ * are whole-panel fades (see initHomeHeroTimeline above). Story/process
+ * copy no longer needs splitting: LanguageController.apply() already sets
+ * their plain textContent directly.
+ */
+export function prepareHeroText(
+  i18n: { text: { heroTitle: string } },
+  i18nCtrl: { splitTextIntoWords: (el: HTMLElement) => HTMLSpanElement[] },
+): void {
+  const title = document.getElementById('hero-title');
+  if (!title) return;
+  gsap.killTweensOf(title);
+  gsap.killTweensOf(title.querySelectorAll('.word, .word-wrap'));
+  title.textContent = i18n.text.heroTitle;
+  i18nCtrl.splitTextIntoWords(title);
 }
 
 /**
@@ -979,7 +657,7 @@ export function initCasesTimeline(): () => void {
   };
   const saturate = (v: number) => Math.min(1, Math.max(0, v));
 
-  const isCjk = (s: string) => /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]/.test(s);
+  const isCjk = (s: string) => /[぀-ヿ㐀-鿿豈-﫿]/.test(s);
 
   const tokenizeWords = (line: string): string[] => {
     const trimmed = line.replace(/\s+/g, ' ').trim();

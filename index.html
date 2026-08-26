@@ -95,17 +95,6 @@
                   </svg>
                 </div>
               </a>
-              <a class="header-menu-link" href="#about-capability" data-target="#about-capability">
-                <div class="header-menu-link-inner">
-                  <span class="header-menu-link-label">
-                    <span class="header-menu-link-text">Areas of Expertise</span>
-                    <span class="header-menu-link-text-clone" aria-hidden="true">Areas of Expertise</span>
-                  </span>
-                  <svg class="header-menu-link-svg" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.515 12h16.97m0 0L13.01 4.525M20.485 12l-7.475 7.476"></path>
-                  </svg>
-                </div>
-              </a>
               <a class="header-menu-link" href="#cases-scenarios" data-target="#cases-scenarios">
                 <div class="header-menu-link-inner">
                   <span class="header-menu-link-label">
@@ -165,23 +154,41 @@
       </div>
 
       <!--
-        Lusion #about-who-team-faces hit zone analogue:
-        cursor only while pointer is over this LEFT region — not the right copy column.
+        Continue affordance for the last home-hero panel (expertise cards) —
+        replaces the old Lusion cursor-following arrow with a simple pill,
+        reusing the Cases & Scenarios finale's own #end-bottom style/markup.
+        Visibility + click are wired in HomeHeroTimeline.ts (toggled with
+        panel step state, not scroll progress).
       -->
-      <div id="story-next-cursor-zone" aria-hidden="true"></div>
-      <!-- Lusion #about-who-face-cursor continue cue -->
-      <button id="story-next-arrow" type="button" aria-label="Continue to Areas of Expertise">
-        <svg id="story-next-arrow-svg" xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="none" viewBox="0 0 36 36" aria-hidden="true">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M33.75 18H2.25m0 0 12.387 12.75M2.25 18 14.637 5.25"></path>
-        </svg>
-      </button>
+      <a id="home-continue-pill" class="end-bottom home-continue-pill" href="#cases-scenarios" aria-label="Continue to Cases and Scenarios">
+        <div class="end-bottom-arrow-container" aria-hidden="true">
+          <div class="end-bottom-arrow"></div>
+          <div class="end-bottom-arrow"></div>
+        </div>
+        <div class="end-bottom-text-container">
+          <div class="end-bottom-text">CONTINUE TO SCROLL</div>
+          <div class="end-bottom-text">CONTINUE TO SCROLL</div>
+        </div>
+        <div class="end-bottom-arrow-container" aria-hidden="true">
+          <div class="end-bottom-arrow"></div>
+          <div class="end-bottom-arrow"></div>
+        </div>
+      </a>
 
       <div id="page-container">
         <div id="page-container-inner">
           <div id="home" class="page">
             <!--
-              Multi-panel horizontal scroll (not left+right on same screen):
-              1) Shaping Brands  2) We are a design-built  3) Story details
+              Home hero: 4 discrete, gesture-paginated panels (one wheel/touch
+              gesture = one panel, see HomeHeroTimeline.ts) —
+              1) Shaping Brands  2) Process overview  3) Story details
+              4) Expertise cards. Reordered + rebuilt per feedback:
+              "首页进来的时候需要滑动3下才能到下一页...改成一次就到下一页",
+              "去掉'we are a design-built studio'", "去掉areas of expertise".
+              Areas of Expertise no longer exists as its own scrollable
+              section/title — its 4 cards now live here as panel 4, a
+              simple static grid (no 3D fan/flip JS) sized to fit one
+              pinned 100vh panel like the others.
             -->
             <section id="home-hero" class="section">
               <div id="home-hero-pin">
@@ -195,34 +202,8 @@ One at a Time</h1>
                   </div>
 
                   <div class="home-panel" id="home-panel-2">
-                    <div class="home-panel-inner home-panel-inner--end">
-                      <h2 id="hero-secondary-title" class="hero-secondary-title">We are a design-built studio.</h2>
-                    </div>
-                  </div>
-
-                  <div class="home-panel" id="home-panel-3">
-                    <div class="home-panel-inner home-panel-inner--story">
-                      <h3 id="story-detail-title" class="story-detail-title">Crafting uniqueness for your business.</h3>
-                      <p id="story-detail-text" class="story-detail-text">
-                        From brand strategy to physical production and global supply chain, we handle it all - with an architect's rigor in material and cost, turning your ideas into premium, budget-friendly brand pieces built to travel.
-                      </p>
-                    </div>
-                  </div>
-
-                  <!--
-                    PROCESS OVERVIEW — 4th slide in this same pinned/horizontal
-                    track (was briefly a separate section with its own
-                    scroll-into-view reveal; moved back in here per feedback:
-                    "这个顺序，前面1-4都在一个页面，横向滑动...到4之后页面才能
-                    往下滑动，下面就是expertise"). Surfaces the full
-                    strategy-to-delivery pipeline as part of the same
-                    slide sequence as panels 1-3, before the pin releases
-                    into Areas of Expertise.
-                  -->
-                  <div class="home-panel" id="home-panel-4">
                     <div class="home-panel-inner" id="process-overview">
                       <div id="process-overview-inner">
-                        <!-- Eyebrow label ("How we work") removed per feedback: "4上面的标题...去掉" — the big headline below stands on its own. -->
                         <h2 id="process-overview-title" class="process-overview-title">One-stop service, concept to delivery.</h2>
                         <div id="process-overview-steps" class="process-overview-steps">
                           <div class="process-step">
@@ -261,111 +242,106 @@ One at a Time</h1>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </section>
 
-            <!-- AREA OF EXPERTISE — structure + motion ported from Lusion AboutCapabilitySection -->
-            <section id="about-capability" class="section">
-              <div id="about-capability-title">
-                <div id="about-capability-title-line-1">AREA OF</div>
-                <div id="about-capability-title-line-2">EXPERTISE</div>
-              </div>
-              <div id="about-capability-subheader">
-                <div id="about-capability-subheader-text">
-                  We bring multidisciplinary expertise to every stage - from strategy and creative to sampling, quality control, mass production, and final delivery.
-                </div>
-              </div>
+                  <div class="home-panel" id="home-panel-3">
+                    <div class="home-panel-inner home-panel-inner--story">
+                      <h3 id="story-detail-title" class="story-detail-title">Crafting uniqueness for your business.</h3>
+                    </div>
+                  </div>
 
-              <div id="about-capability-cards-wrapper">
-                <div id="about-capability-cards">
-                  <article class="about-capability-card">
-                    <div class="about-capability-card-back" aria-hidden="true">
-                      <svg class="about-capability-card-mark" viewBox="0 0 132 132" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M28 24L98 24L98 74M28 24L28 98L72 98M92 74L92 98M84 80L92 74" />
-                      </svg>
-                    </div>
-                    <div class="about-capability-card-front">
-                      <div class="about-capability-card-header">
-                        <p class="about-capability-card-header-text">Strategic design</p>
-                      </div>
-                      <ul class="about-capability-card-list">
-                        <li>Brand Strategy Consulting</li>
-                        <li>Brand Identity Design</li>
-                        <li>Core Product &amp; Packaging Design</li>
-                        <li>Material &amp; Cost Planning</li>
-                      </ul>
-                      <div class="about-capability-card-footer" aria-hidden="true">
-                        <p class="about-capability-card-footer-title">Strategic design</p>
-                      </div>
-                    </div>
-                  </article>
+                  <div class="home-panel" id="home-panel-4">
+                    <div class="home-panel-inner" id="home-cards-panel">
+                      <div id="home-cards-grid">
+                        <article class="about-capability-card">
+                          <div class="about-capability-card-back" aria-hidden="true">
+                            <svg class="about-capability-card-mark" viewBox="0 0 132 132" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M28 24L98 24L98 74M28 24L28 98L72 98M92 74L92 98M84 80L92 74" />
+                            </svg>
+                          </div>
+                          <div class="about-capability-card-front">
+                            <div class="about-capability-card-header">
+                              <p class="about-capability-card-header-text">Strategic design</p>
+                            </div>
+                            <ul class="about-capability-card-list">
+                              <li>Brand Strategy Consulting</li>
+                              <li>Brand Identity Design</li>
+                              <li>Core Product &amp; Packaging Design</li>
+                              <li>Material &amp; Cost Planning</li>
+                            </ul>
+                            <div class="about-capability-card-footer" aria-hidden="true">
+                              <p class="about-capability-card-footer-title">Strategic design</p>
+                            </div>
+                          </div>
+                        </article>
 
-                  <article class="about-capability-card">
-                    <div class="about-capability-card-back" aria-hidden="true">
-                      <svg class="about-capability-card-mark" viewBox="0 0 132 132" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M28 24L98 24L98 74M28 24L28 98L72 98M92 74L92 98M84 80L92 74" />
-                      </svg>
-                    </div>
-                    <div class="about-capability-card-front">
-                      <div class="about-capability-card-header">
-                        <p class="about-capability-card-header-text">Brand activation</p>
-                      </div>
-                      <ul class="about-capability-card-list">
-                        <li>Limited-Edition &amp; Event Product</li>
-                        <li>Gift Set &amp; Bundling Design</li>
-                        <li>On-Site Brand Experience</li>
-                        <li>Budget-Optimized Solution</li>
-                      </ul>
-                      <div class="about-capability-card-footer" aria-hidden="true">
-                        <p class="about-capability-card-footer-title">Brand activation</p>
-                      </div>
-                    </div>
-                  </article>
+                        <article class="about-capability-card">
+                          <div class="about-capability-card-back" aria-hidden="true">
+                            <svg class="about-capability-card-mark" viewBox="0 0 132 132" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M28 24L98 24L98 74M28 24L28 98L72 98M92 74L92 98M84 80L92 74" />
+                            </svg>
+                          </div>
+                          <div class="about-capability-card-front">
+                            <div class="about-capability-card-header">
+                              <p class="about-capability-card-header-text">Brand activation</p>
+                            </div>
+                            <ul class="about-capability-card-list">
+                              <li>Limited-Edition &amp; Event Product</li>
+                              <li>Gift Set &amp; Bundling Design</li>
+                              <li>On-Site Brand Experience</li>
+                              <li>Budget-Optimized Solution</li>
+                            </ul>
+                            <div class="about-capability-card-footer" aria-hidden="true">
+                              <p class="about-capability-card-footer-title">Brand activation</p>
+                            </div>
+                          </div>
+                        </article>
 
-                  <article class="about-capability-card">
-                    <div class="about-capability-card-back" aria-hidden="true">
-                      <svg class="about-capability-card-mark" viewBox="0 0 132 132" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M28 24L98 24L98 74M28 24L28 98L72 98M92 74L92 98M84 80L92 74" />
-                      </svg>
-                    </div>
-                    <div class="about-capability-card-front">
-                      <div class="about-capability-card-header">
-                        <p class="about-capability-card-header-text">Turnkey delivery</p>
-                      </div>
-                      <ul class="about-capability-card-list">
-                        <li>Supplier Sourcing &amp; Coordination</li>
-                        <li>Prototyping &amp; Sampling</li>
-                        <li>Factory-Managed Production</li>
-                        <li>Quality Control &amp; Fulfillment</li>
-                      </ul>
-                      <div class="about-capability-card-footer" aria-hidden="true">
-                        <p class="about-capability-card-footer-title">Turnkey delivery</p>
-                      </div>
-                    </div>
-                  </article>
+                        <article class="about-capability-card">
+                          <div class="about-capability-card-back" aria-hidden="true">
+                            <svg class="about-capability-card-mark" viewBox="0 0 132 132" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M28 24L98 24L98 74M28 24L28 98L72 98M92 74L92 98M84 80L92 74" />
+                            </svg>
+                          </div>
+                          <div class="about-capability-card-front">
+                            <div class="about-capability-card-header">
+                              <p class="about-capability-card-header-text">Turnkey delivery</p>
+                            </div>
+                            <ul class="about-capability-card-list">
+                              <li>Supplier Sourcing &amp; Coordination</li>
+                              <li>Prototyping &amp; Sampling</li>
+                              <li>Factory-Managed Production</li>
+                              <li>Quality Control &amp; Fulfillment</li>
+                            </ul>
+                            <div class="about-capability-card-footer" aria-hidden="true">
+                              <p class="about-capability-card-footer-title">Turnkey delivery</p>
+                            </div>
+                          </div>
+                        </article>
 
-                  <article class="about-capability-card">
-                    <div class="about-capability-card-back" aria-hidden="true">
-                      <svg class="about-capability-card-mark" viewBox="0 0 132 132" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M28 24L98 24L98 74M28 24L28 98L72 98M92 74L92 98M84 80L92 74" />
-                      </svg>
-                    </div>
-                    <div class="about-capability-card-front">
-                      <div class="about-capability-card-header">
-                        <p class="about-capability-card-header-text">Global vision</p>
+                        <article class="about-capability-card">
+                          <div class="about-capability-card-back" aria-hidden="true">
+                            <svg class="about-capability-card-mark" viewBox="0 0 132 132" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M28 24L98 24L98 74M28 24L28 98L72 98M92 74L92 98M84 80L92 74" />
+                            </svg>
+                          </div>
+                          <div class="about-capability-card-front">
+                            <div class="about-capability-card-header">
+                              <p class="about-capability-card-header-text">Global vision</p>
+                            </div>
+                            <ul class="about-capability-card-list">
+                              <li>International Design Perspective</li>
+                              <li>China-Based Supply Chain</li>
+                              <li>Cross-Border Delivery</li>
+                              <li>Scalable Cost Control</li>
+                            </ul>
+                            <div class="about-capability-card-footer" aria-hidden="true">
+                              <p class="about-capability-card-footer-title">Global vision</p>
+                            </div>
+                          </div>
+                        </article>
                       </div>
-                      <ul class="about-capability-card-list">
-                        <li>International Design Perspective</li>
-                        <li>China-Based Supply Chain</li>
-                        <li>Cross-Border Delivery</li>
-                        <li>Scalable Cost Control</li>
-                      </ul>
-                      <div class="about-capability-card-footer" aria-hidden="true">
-                        <p class="about-capability-card-footer-title">Global vision</p>
-                      </div>
                     </div>
-                  </article>
+                  </div>
                 </div>
               </div>
             </section>

@@ -6,13 +6,7 @@ import {
   setViewportHeight,
   bindScrollIndicator,
 } from './scroll/ScrollController';
-import {
-  initCapabilityTimeline,
-  initCasesTimeline,
-  initHomeHeroTimeline,
-  initStoryNextArrow,
-  prepareHeroText,
-} from './scroll/HomeHeroTimeline';
+import { initCasesTimeline, initHomeHeroTimeline, prepareHeroText } from './scroll/HomeHeroTimeline';
 import { LanguageController } from './i18n/LanguageController';
 import { IntroSequence } from './intro/IntroSequence';
 import gsap from 'gsap';
@@ -67,16 +61,18 @@ async function init(): Promise<void> {
     });
 
     homePinActive = true;
-    destroyHeroTimeline = initHomeHeroTimeline((p) => {
-      homePinActive = p < 0.999;
-      if (homePinActive) {
-        // Lusion aboutHero.introRatio: early pin progress still moves the camera
-        // while START_WAIT keeps type pinned (x=0).
-        const eased = 1 - Math.pow(1 - p, 1.25);
-        engine.setScrollProgress(eased * HOME_SCENE_END);
-      }
-    });
-    initCapabilityTimeline();
+    destroyHeroTimeline = initHomeHeroTimeline(
+      (target, opts) => scroll.scrollTo(target, opts),
+      (p) => {
+        homePinActive = p < 0.999;
+        if (homePinActive) {
+          // Lusion aboutHero.introRatio: early pin progress still moves the camera
+          // while START_WAIT keeps type pinned (x=0).
+          const eased = 1 - Math.pow(1 - p, 1.25);
+          engine.setScrollProgress(eased * HOME_SCENE_END);
+        }
+      },
+    );
     destroyCasesTimeline = initCasesTimeline();
     ScrollTrigger.refresh();
   };
@@ -95,20 +91,20 @@ async function init(): Promise<void> {
   ScrollTrigger.refresh();
 
   bindScrollIndicator();
-  // The custom small in-panel arrow (#process-next-arrow) was removed —
-  // this Lusion cursor-following arrow is the one continue-to-Expertise
-  // affordance now, same as it always was pre-panel-4. Its endWaitStart
-  // timing and target already account for the new 4-panel pin (see
-  // HomeHeroTimeline.ts), so it now appears once panel 4's hold period
-  // starts, not right after panel 3.
-  initStoryNextArrow((target, opts) => scroll.scrollTo(target, opts));
+  // The old Lusion cursor-following arrow (#story-next-arrow) is retired —
+  // the home hero is now 4 discrete gesture-paginated panels ending on the
+  // expertise-cards panel, with a simple "CONTINUE TO SCROLL" pill
+  // (#home-continue-pill, styled like the Cases section's own #end-bottom)
+  // as the explicit affordance into Cases & Scenarios. That pill's
+  // visibility and click handling both live inside initHomeHeroTimeline
+  // (see HomeHeroTimeline.ts) since they're tied directly to step state.
 
-  // Process overview panel (panel 4 of the home-hero pinned track). Its
-  // enter/exit fade and the one-time .is-visible trigger for the internal
-  // dot/line stagger live in applyProgress inside initHomeHeroTimeline (see
-  // HomeHeroTimeline.ts), driven by the same scrubbed pin progress as
-  // panels 1-3. Only the cursor tilt is wired here, since it's independent
-  // of that reveal timing.
+  // Process overview panel (panel 2 of the home-hero pinned track, was
+  // panel 4 before the reorder). Its enter/exit fade and the one-time
+  // .is-visible trigger for the internal dot stagger live inside
+  // initHomeHeroTimeline (see HomeHeroTimeline.ts), driven by discrete step
+  // changes now rather than scrubbed scroll progress. Only the cursor tilt
+  // is wired here, since it's independent of that reveal timing.
   const processSection = document.getElementById('process-overview');
   if (processSection && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
     // Subtle cursor-follow tilt per step, desktop/pointer only (matches the
@@ -153,6 +149,18 @@ async function init(): Promise<void> {
 
   const talkBtn = document.getElementById('header-right-talk-btn');
   talkBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    scroll.scrollTo('#contact-section', { offset: -12 });
+  });
+
+  // Cases & Scenarios finale's "CONTINUE TO SCROLL" pill (#end-bottom) —
+  // its href="#contact-section" alone doesn't reliably work because Lenis
+  // owns scroll position; every other CTA on the site (talk button, menu
+  // links, home hero's own continue pill) explicitly calls scroll.scrollTo
+  // instead of relying on the native anchor jump, so this one needs the
+  // same wiring. Per feedback: "点击按钮跳转到let's talk的模块".
+  const endBottomBtn = document.getElementById('end-bottom');
+  endBottomBtn?.addEventListener('click', (e) => {
     e.preventDefault();
     scroll.scrollTo('#contact-section', { offset: -12 });
   });
@@ -255,7 +263,7 @@ async function init(): Promise<void> {
     // EndSection listens for this and re-splits title/subtitle chars for EN/ZH
     window.dispatchEvent(new CustomEvent('app:langchange'));
     gsap.fromTo(
-      '#hero-title .word, #hero-secondary-title, #story-detail-title, #story-detail-text, #about-capability-title-line-1, #about-capability-title-line-2, #about-capability-subheader-text, #cases-title, #cases-desc',
+      '#hero-title .word, #story-detail-title, #cases-title, #cases-desc',
       { y: 24, opacity: 0 },
       { y: 0, opacity: 1, stagger: 0.04, duration: 0.7, ease: 'power3.out' },
     );

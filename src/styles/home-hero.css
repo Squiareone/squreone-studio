@@ -29,7 +29,8 @@
 }
 
 /*
- * 4 sequential panels (was 3 — panel 4 is the new process-overview slide).
+ * 4 sequential, gesture-paginated panels: 1) Shaping Brands 2) Process
+ * overview 3) Story 4) Expertise cards (see HomeHeroTimeline.ts).
  * Use % of the pin (NOT 100vw) — 100vw includes scrollbar gutter and
  * easily creates horizontal overflow → whole page shifts left with blank
  * space on the right.
@@ -69,30 +70,12 @@
   align-items: flex-start;
 }
 
-/* Panel 2: secondary bottom-right */
-.home-panel-inner--end {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: flex-end;
-  text-align: right;
-  /* Panel 1/2 share the same base padding-bottom, but panel 2's text was
-     sitting noticeably closer to the frame edge than panel 1's — adding
-     extra room here specifically so it matches. This is an estimate from
-     the screenshot, not a measured value; nudge the added clamp() if it's
-     still off. */
-  padding-bottom: calc(clamp(26px, 3.2vw, 46px) + clamp(50px, 5vw, 90px));
-}
-
-#home-panel-2 .hero-secondary-title {
-  margin-left: auto;
-}
-
-/* Panel 3: story title top-left / body bottom-right */
+/* Panel 3: story title only, top-left (description paragraph removed per
+   feedback — screenshot with the body copy circled + "去掉这个描述"). */
 .home-panel-inner--story {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding-top: calc(var(--base-padding-y) * 3.3);
   padding-bottom: calc(var(--base-padding-y) * 1.2);
 }
@@ -120,9 +103,7 @@ html[data-lang='zh'] .hero-title {
 
 /* Lusion: animate whole line units / word units with translate3d — don't clip x */
 .hero-title .word-wrap,
-.hero-secondary-title .word-wrap,
-.story-detail-title .word-wrap,
-.story-detail-text .word-wrap {
+.story-detail-title .word-wrap {
   display: inline-block;
   overflow: visible;
   vertical-align: top;
@@ -131,29 +112,18 @@ html[data-lang='zh'] .hero-title {
 }
 
 .hero-title .word-wrap.is-cjk,
-.hero-secondary-title .word-wrap.is-cjk,
-.story-detail-title .word-wrap.is-cjk,
-.story-detail-text .word-wrap.is-cjk {
+.story-detail-title .word-wrap.is-cjk {
   margin-right: 0;
 }
 
 .hero-title .word,
-.hero-secondary-title .word,
-.story-detail-title .word,
-.story-detail-text .word {
+.story-detail-title .word {
   display: inline-block;
   will-change: transform, opacity;
 }
 
-.hero-secondary-title,
-.story-detail-title,
-.story-detail-text {
+.story-detail-title {
   will-change: transform, opacity;
-}
-
-/* detail body: multi-line word units for Lusion details-style motion */
-.story-detail-text {
-  max-width: min(38ch, 92%);
 }
 
 .hero-scroll-hint {
@@ -177,27 +147,6 @@ html[data-lang='zh'] .hero-scroll-hint {
   letter-spacing: 0.08em;
 }
 
-.hero-secondary-title {
-  margin: 0;
-  /* Match .story-detail-title's size exactly, not its own clamp — same
-     style/weight as "Crafting uniqueness...", not italic. */
-  font-size: clamp(2.4rem, 6.2vw, 6.4rem);
-  line-height: 0.98;
-  letter-spacing: -0.02em;
-  max-width: 15ch;
-  white-space: pre-line;
-  text-transform: none;
-  will-change: transform, opacity;
-}
-
-html[data-lang='zh'] .hero-secondary-title {
-  font-family: 'Noto Sans SC', var(--font-sans);
-  font-size: clamp(2.1rem, 5.3vw, 5.4rem);
-  line-height: 1.08;
-  letter-spacing: -0.02em;
-  max-width: 8ch;
-}
-
 /* Story copy when used as home panel 3 */
 .story-detail-title {
   margin: 0;
@@ -211,30 +160,11 @@ html[data-lang='zh'] .hero-secondary-title {
   will-change: transform, opacity;
 }
 
-.story-detail-text {
-  align-self: flex-end;
-  margin: 0;
-  margin-bottom: 12px;
-  font-size: 16pt;
-  line-height: 1.48;
-  letter-spacing: -0.01em;
-  max-width: 35ch;
-  text-align: left;
-  will-change: transform, opacity;
-}
-
 html[data-lang='zh'] .story-detail-title {
   font-family: 'Noto Sans SC', var(--font-sans);
   font-size: clamp(2.1rem, 5.3vw, 5.4rem);
   line-height: 1.08;
   max-width: 13ch;
-}
-
-html[data-lang='zh'] .story-detail-text {
-  font-family: 'Noto Sans SC', var(--font-sans);
-  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
-  line-height: 1.72;
-  max-width: 30ch;
 }
 
 @media (max-width: 767px) {
@@ -244,148 +174,81 @@ html[data-lang='zh'] .story-detail-text {
     line-height: 0.95;
   }
 
-  .hero-secondary-title {
-    max-width: none;
-    font-size: clamp(2.05rem, 12.8vw, 4.8rem);
-  }
-
-  .home-panel-inner--story {
-    padding-top: calc(var(--base-padding-y) * 2.5);
-  }
+  /* padding-top was reduced here (2.5x instead of the base 3.3x) — that
+     multiplier, applied to --base-padding-y's own narrow-viewport floor,
+     came out smaller than the fixed header's own rendered height, so the
+     title visually collided with the "大方" logo at these widths. Keeping
+     the same 3.3x used everywhere else (see .home-panel-inner--story's
+     base rule above) instead, so the title-to-header gap is consistent
+     and always clears the header regardless of viewport width — per
+     feedback: "标题跟hero menu的距离和其他页面一样". */
 
   .story-detail-title {
     font-size: clamp(1.9rem, 10.5vw, 4.1rem);
     max-width: 12ch;
   }
-
-  .story-detail-text {
-    align-self: flex-start;
-    max-width: none;
-    font-size: clamp(0.98rem, 3.9vw, 1.3rem);
-    margin-top: 1.6rem;
-  }
 }
 
-/* —— Areas of expertise (Lusion AboutCapabilitySection layout) —— */
-#about-capability {
-  position: relative;
+/* —— Expertise cards: home-hero panel 4 ——
+   Was a standalone "Areas of Expertise" section (giant title + a ~300vh
+   scroll-scrubbed 3D fan/flip via initCapabilityTimeline). The section
+   itself is gone per feedback ("去掉areas of expertise，menu里也去掉"), but
+   the card's own identity — poker-card flip from a black/mark back face to
+   the light content front face, same size/proportions as before — is kept
+   per follow-up feedback: "这里的卡片的交互跟之前的版本一样，扑克牌样式，从
+   背面翻过来，尺寸大小一样". Since this panel has no scroll runway to scrub
+   against (fixed 100vh, one discrete step), the flip is no longer driven by
+   scroll position — instead all 4 cards flip together, staggered, the
+   moment this panel becomes the active step (toggled via the .is-visible
+   class from setPanelClasses in HomeHeroTimeline.ts), and un-flip back to
+   the card-back when the panel is left so re-entering replays the flip. */
+#home-cards-panel {
   z-index: 1;
-  color: var(--color-white);
-  font-size: clamp(0.875rem, 1vw, 1.75rem);
-  background: transparent;
-  padding: var(--base-padding-y) var(--base-padding-x);
-  /* tall scroll runway for card fan (Lusion uses ~300vh under cards wrapper) */
-  min-height: calc(var(--vh, 1vh) * 100);
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  /* Card 3D fan / title shifts must not expand page width */
-  overflow-x: clip;
-}
-
-#about-capability-title {
-  line-height: 1em;
-  font-size: 12vw;
-  margin-top: calc(2em - 2 * var(--base-padding-y));
   display: flex;
-  flex-direction: column;
-  will-change: transform;
-  position: relative;
-  z-index: 2;
-  max-width: 100%;
+  align-items: center;
 }
 
-#about-capability-title .cap-line-mask {
-  position: relative;
-  overflow: hidden;
-  display: block;
-}
-
-#about-capability-title .cap-word {
-  display: inline-block;
-  will-change: transform;
-  transform: translate3d(0, 100%, 0);
-}
-
-#about-capability-title-line-2 {
-  left: 2em;
-  position: relative;
-}
-
-#about-capability-subheader {
-  position: absolute;
-  right: var(--base-padding-x);
-  top: var(--base-padding-y);
-  font-size: 0.875em;
-  width: 20em;
-  text-transform: uppercase;
-  line-height: 1.2;
-  margin-top: calc(26vw - 2 * var(--base-padding-y));
-  z-index: 2;
-}
-
-#about-capability-subheader-text {
-  will-change: transform;
-  overflow: hidden;
-}
-
-#about-capability-subheader-text .cap-line-mask {
-  position: relative;
-  overflow: hidden;
-  display: block;
-}
-
-#about-capability-subheader-text .cap-line {
-  display: block;
-  will-change: transform;
-  transform: translate3d(0, 110%, 0);
-}
-
-/* Lusion: ~300vh under cards so fan/flip plays against section screenRatio */
-#about-capability-cards-wrapper {
+/* Card layout/positioning mirrors the original "Area of Expertise" section
+   tier-for-tier: >=901px cards are position:absolute (JS-driven fan, see
+   measureCards()/animateCards() in HomeHeroTimeline.ts, a literal port of
+   the original's applyCardsFromSection math), 560-900px is a static 2-col
+   grid, <=559px is a static single column — same three breakpoints as the
+   original, per feedback: "响应式也按照这里的". Below 901px cards no longer
+   fan/translate (matching the original's own mobile behavior, which only
+   ever flipped in place there), they just flip. */
+#home-cards-grid {
   position: relative;
   width: 100%;
-  max-width: 100%;
-  margin: 4em auto calc(var(--vh, 1vh) * 300) auto;
-  z-index: 1;
-  box-sizing: border-box;
-  /* Fan motion paints outside; clip so layout width stays stable */
-  overflow: visible;
-}
-
-#about-capability-cards {
-  perspective: calc(var(--vh, 1vh) * 100);
-  width: 100%;
-  max-width: 100%;
-  perspective-origin: center center;
-  position: relative;
-  /* height set in JS to one card height on desktop */
+  max-width: 1400px;
+  margin: 0 auto;
   min-height: 20vw;
-  transform-style: preserve-3d;
-  box-sizing: border-box;
+  perspective: 1600px;
+  --cards-gap: clamp(1rem, 2vw, 2rem);
 }
 
-/* Desktop: absolute stack → fan out (Lusion) */
-.about-capability-card {
+#home-cards-grid .about-capability-card {
   position: absolute;
   top: 0;
   left: 0;
-  display: block;
-  /* 4 cards + 3 gaps — match Lusion column math */
-  width: calc((100% - var(--grid-gap) * 3) / 4);
-  max-width: calc((100% - var(--grid-gap) * 3) / 4);
+  width: calc((100% - var(--cards-gap) * 3) / 4);
+  max-width: none;
   color: var(--color-black);
   aspect-ratio: 314 / 438;
-  transform-style: preserve-3d;
-  font-size: clamp(0.82rem, 1.02vw, 1.08rem);
-  transform: translate3d(0, 0, 0) rotateY(180deg);
-  will-change: transform;
-  transform-origin: center center;
+  font-size: clamp(0.72rem, 0.9vw, 0.86rem);
   box-sizing: border-box;
+  transform-style: preserve-3d;
+  /* Initial paint before JS attaches — actual entrance (collapsed stack,
+     back-facing -> fans out to its grid slot with the original's own
+     wobble/overshoot curve baked in -> flips face-up) is a literal port of
+     the original's per-frame formulas, played once on panel-enter instead
+     of scrubbed against a scroll position (this panel has no scroll
+     runway), see animateCards() in HomeHeroTimeline.ts. */
+  transform: rotateY(180deg);
+  will-change: transform;
 }
 
-.about-capability-card-front,
-.about-capability-card-back {
+#home-cards-grid .about-capability-card-front,
+#home-cards-grid .about-capability-card-back {
   position: absolute;
   inset: 0;
   border-radius: 0.8em;
@@ -393,9 +256,8 @@ html[data-lang='zh'] .story-detail-text {
   -webkit-backface-visibility: hidden;
 }
 
-.about-capability-card-back {
-  /* Adopted from "Luxury Gift Box Design" card style */
-  background-color: #000 !important;
+#home-cards-grid .about-capability-card-back {
+  background-color: #000;
   background-image: url('../assets/card-back-pattern.svg');
   background-size: cover;
   background-position: center;
@@ -405,26 +267,15 @@ html[data-lang='zh'] .story-detail-text {
   overflow: hidden;
 }
 
-.about-capability-card-back::before {
-  content: none;
-}
-
-.about-capability-card-back::after {
-  content: none;
-}
-
-/* SquareOne mark centered in the card back's diamond frame (see the inline
-   <svg class="about-capability-card-mark"> in index.html) — added per
-   product ask: "试图加上 square one 的 logo". Same path as the intro-loader
-   mark, recolored for a light card face instead of the dark loader. */
+/* SquareOne mark centered in the card back's diamond frame. No extra
+   rotateY here — the back face already carries its own counter
+   rotateY(180deg) above so the mark reads upright, not mirrored. */
 .about-capability-card-mark {
   position: absolute;
   left: 50%;
   top: 50%;
   width: 22%;
   aspect-ratio: 1;
-  /* No extra rotateY here — .about-capability-card-back already carries its
-     own counter rotateY(180deg) so its children read upright, not mirrored. */
   transform: translate(-50%, -50%);
   overflow: visible;
   pointer-events: none;
@@ -439,50 +290,33 @@ html[data-lang='zh'] .story-detail-text {
   stroke-linejoin: round;
 }
 
-.about-capability-card-front {
+/* Front-face layout matches the original section's card exactly (padding,
+   gaps, header/list/footer arrangement) per feedback: "卡片内的布局也按照
+   之前的布局". */
+#home-cards-grid .about-capability-card-front {
   padding: 1.15em 1.25em;
   background: #e9e9f2;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  /* Base gap — this is what separates the list from the mirrored footer
-     below it. Header-to-list spacing is this gap PLUS the header's own
-     margin-bottom below, so the two distances can grow independently. */
   gap: 1.35em;
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.34);
 }
 
 .about-capability-card-header {
   display: flex;
-  /* Letter-badge chip removed (see below) — header now holds just the
-     title, so space-between no longer has a second item to push apart. */
   justify-content: flex-start;
   align-items: center;
   flex: 0 0 auto;
-  /* No fixed margin here at the 4-per-row (>900px) tier — the list below
-     now centers itself vertically between header and footer via auto
-     margins, so a fixed offset here would just make that centering
-     lopsided. 2-column/1-column tiers restore the old fixed-gap (non-
-     centered) behavior further down, since this ask was specific to the
-     desktop 4-up card. */
   margin-bottom: 0;
 }
 
 .about-capability-card-header-text {
   margin: 0;
-  /* 4-per-row tier, narrow sub-range (901-1079px): back to a fluid clamp
-     (9-12pt) instead of the flat 10pt this used to be — flat was still
-     truncating the longer titles ("BRAND ACTIVATION", "TURNKEY DELIVERY")
-     with the ellipsis safety net below, per feedback: "标题字体大小自适应
-     展示齐全". The 1080-1600px range restores the original 12-22pt fluid
-     clamp (see the min-width: 1080px override below). */
-  font-size: clamp(9pt, calc(-6.19pt + 1.69vw), 12pt);
+  font-size: clamp(12pt, calc(-0.89pt + 1.43vw), 22pt);
   font-weight: 500;
   color: var(--color-black);
   text-transform: uppercase;
-  /* Safety net: truncate with an ellipsis rather than wrap to a second
-     line if a title is ever tight for room — a wrapped title is what
-     threw the bullet list out of alignment before. */
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -490,26 +324,22 @@ html[data-lang='zh'] .story-detail-text {
   white-space: nowrap;
 }
 
-/* Per feedback: "去掉首字母缩写" — the standalone S/B/T/G letter-badge chip
-   (header and its mirrored footer twin) is removed; the title's own first
-   letter now carries that emphasis instead, see the ::first-letter rule
-   below. */
+/* First-letter emphasis (replaces the old S/B/T/G letter-badge chip) — EN
+   only, a bold/enlarged single Latin initial doesn't read the same way on
+   a 2-4 character CJK title. */
+html[data-lang='en'] .about-capability-card-header-text::first-letter {
+  font-weight: 700;
+  font-size: calc(1.5em + 4pt);
+}
 
-/* Bullet-style capability list (replaced the single paragraph so the card's
-   lower half isn't mostly dead space) — short line items, each underlined
-   with a dotted rule. justify-content was space-between, which stretched
-   the gaps to fill the whole card height — uneven and grew huge once the
-   spacing was loosened, unlike the reference's evenly-packed group sitting
-   right under the title. flex-start + a fixed gap keeps every gap (header
-   to item 1, and between each item) the same size; any leftover height
-   just falls empty below the last item instead of getting distributed. */
+html[data-lang='zh'] .about-capability-card-header-text {
+  font-family: 'Noto Sans SC', var(--font-sans);
+  font-size: clamp(14pt, calc(1.11pt + 1.43vw), 24pt);
+}
+
+/* Bullet-style capability list — dotted underline per item, auto-margin
+   centered between header and footer (original's 4-per-row centering). */
 .about-capability-card-list {
-  /* Auto top/bottom margins center this whole list block in the leftover
-     space between the header and the footer at the 4-per-row (>900px)
-     tier — front's own gap still sets a minimum floor on each side, and
-     the leftover splits evenly above/below since these are the only
-     auto margins on that axis. 2-col/1-col tiers cancel this back to 0
-     further down to keep their existing footer-pinned-to-bottom layout. */
   margin: auto 0;
   padding: 0;
   list-style: none;
@@ -521,19 +351,10 @@ html[data-lang='zh'] .story-detail-text {
   gap: 0.9em;
 }
 
-/* border-bottom:dotted renders each dot flush against the next (browser
-   dot-spacing isn't controllable via border), which read as a solid line
-   at this thickness — a background-image dot pattern instead, so the gap
-   between dots is an explicit value (25% wider than the first "make it
-   actually look dotted" pass: 6px → 7.5px). */
 .about-capability-card-list li {
   margin: 0;
   padding-bottom: 1.05em;
-  /* 4-per-row tier, narrow sub-range (901-1079px): 8pt at 901px up to
-     ~11pt at 1079px (matches the unchanged 1080-1600px curve's own value
-     at that edge, so the two ranges meet cleanly). ZH keeps its own
-     unified 9-17pt rule further down, untouched by this split. */
-  font-size: clamp(8pt, calc(-7.19pt + 1.69vw), 11pt);
+  font-size: clamp(9pt, calc(-1.31pt + 1.14vw), 17pt);
   line-height: 1.3;
   color: #444444;
   letter-spacing: -0.01em;
@@ -554,25 +375,23 @@ html[data-lang='zh'] .story-detail-text {
   padding-bottom: 0;
 }
 
-/* Mirrored footer duplicate (mark + title, flipped 180deg) — matches the
-   reference card's bottom-left flourish. Decorative only (aria-hidden).
-   At the 4-per-row (>900px) tier the list above now owns the auto-margin
-   centering, so this no longer needs its own margin-top: auto — it just
-   follows the list with the front's normal gap and lands at the bottom
-   naturally. 2-col/1-col tiers restore margin-top: auto below to keep
-   pinning it to the very bottom of the card as before. */
+html[data-lang='zh'] .about-capability-card-list li {
+  font-family: 'Noto Sans SC', var(--font-sans);
+  font-size: clamp(9pt, calc(-1.31pt + 1.14vw), 17pt);
+  line-height: 1.4;
+}
+
+/* Mirrored footer duplicate (title only, rotated 180deg) — matches the
+   original reference card's bottom flourish. Decorative only (aria-hidden).
+   Default flex justify-content packs the title against this row's start
+   edge, which is the card's LEFT before the 180deg rotation below —
+   rotation then flips that to the card's RIGHT once viewed right-side-up,
+   landing the title right-aligned per earlier feedback: "底部的标题居右
+   对齐". Its own first-letter stays normal size (not enlarged like the
+   header's), per that same earlier feedback round. */
 .about-capability-card-footer {
   margin-top: 0;
-  /* Hidden by default now — this is the narrow 901-1079px sub-range's
-     default (mirrored footer removed there to save vertical room). The
-     1080-1600px override below turns it back on. */
-  display: none;
-  /* Letter chip removed — the title is now the footer's only child, in
-     normal (not row-reverse) flex order. Default justify-content packs it
-     against this row's start edge, which is the card's LEFT before the
-     180deg rotation below — rotation then flips that to the card's RIGHT
-     once viewed right-side-up, landing the title right-aligned per
-     feedback: "底部的标题居右对齐". */
+  display: flex;
   align-items: center;
   transform: rotate(180deg);
   transform-origin: center;
@@ -581,7 +400,6 @@ html[data-lang='zh'] .story-detail-text {
 
 .about-capability-card-footer-title {
   margin: 0;
-  /* Same size as the header title at this (4-per-row) tier. */
   font-size: clamp(12pt, calc(-0.89pt + 1.43vw), 22pt);
   font-weight: 500;
   color: var(--color-black);
@@ -594,102 +412,27 @@ html[data-lang='zh'] .about-capability-card-footer-title {
   font-size: clamp(14pt, calc(1.11pt + 1.43vw), 24pt);
 }
 
-/* First-letter emphasis replaces the removed S/B/T/G letter chip — EN
-   only (a bold/enlarged single Latin initial doesn't read the same way
-   on a 2-4 character CJK title), per feedback: "标题改成首字母加粗加大".
-   Header only — per follow-up feedback the mirrored footer twin's first
-   letter goes back to normal ("底部标题的首字母正常就好"), and the header's
-   own first letter gets an extra +2pt on top of the previous 1.5x size
-   ("顶部的首字母再增大2pt"). calc() mixes the relative 1.5em multiplier
-   with a flat +2pt so the bump holds at every viewport width. */
-html[data-lang='en'] .about-capability-card-header-text::first-letter {
-  font-weight: 700;
-  font-size: calc(1.5em + 4pt);
-}
-
-html[data-lang='zh'] .about-capability-card-header-text,
-html[data-lang='zh'] #about-capability-subheader {
-  font-family: 'Noto Sans SC', var(--font-sans);
-}
-
-/* ZH title: 14-24pt over the 901-1600px range (EN is 12-22pt). */
-html[data-lang='zh'] .about-capability-card-header-text {
-  font-size: clamp(14pt, calc(1.11pt + 1.43vw), 24pt);
-}
-
-html[data-lang='zh'] .about-capability-card-list li {
-  font-family: 'Noto Sans SC', var(--font-sans);
-  font-size: clamp(9pt, calc(-1.31pt + 1.14vw), 17pt);
-  line-height: 1.4;
-}
-
-/* 4-per-row tier, wide sub-range (1080-1600px+): restores the original
-   fluid EN title/body clamps and the mirrored footer, undoing the
-   901-1079px narrow-range simplification above. ZH is untouched — it
-   never had a narrow-range override, so it already spans 901-1600px
-   uniformly. */
-@media (min-width: 1080px) {
-  .about-capability-card-header-text {
-    font-size: clamp(12pt, calc(-0.89pt + 1.43vw), 22pt);
-  }
-
-  .about-capability-card-list li {
-    font-size: clamp(9pt, calc(-1.31pt + 1.14vw), 17pt);
-  }
-
-  .about-capability-card-footer {
-    display: flex;
-  }
-}
-
-/* Lusion breakdown-style layout: 2 cards per row from 560px up.
-   (Tried extending this up through 1180px to dodge the 4-column title-
-   wrap issue at that width, but the 768-1180px range still needs the
-   JS-driven absolute-position fan layout — switching it to a plain grid
-   mid-range broke that positioning instead. Back to 900px; the 4-column
-   range now just shrinks its font more aggressively — see the
-   768-1180px block below — instead of changing layout systems.) */
+/* 2-per-row tier (560-900px) — cards drop out of the absolute fan into a
+   normal static grid, same as the original; JS only flips them in place
+   here (no translate), matching the original's own mobile behavior. */
 @media (min-width: 560px) and (max-width: 900px) {
-  #about-capability-subheader {
-    position: relative;
-    top: 0;
-    right: auto;
-    width: 100%;
-    margin-top: 1.1em;
-    text-align: left;
-  }
-
-  #about-capability-subheader-text {
-    font-size: clamp(0.86rem, 1.55vw, 1rem);
-    text-align: left;
-  }
-
-  #about-capability-cards-wrapper {
-    margin-top: 2.8em;
-    margin-bottom: calc(var(--vh, 1vh) * 34);
-  }
-
-  #about-capability-cards {
-    perspective: 260vw;
-    height: auto !important;
+  #home-cards-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.05em;
+    min-height: 0;
+    height: auto !important;
   }
 
-  .about-capability-card {
+  #home-cards-grid .about-capability-card {
     position: relative;
+    top: auto;
+    left: auto;
     width: 100%;
     max-width: none;
-    left: auto !important;
-    top: auto !important;
     font-size: clamp(0.74rem, 1.35vw, 0.86rem);
   }
 
-  /* Title: EN lowered to a 10-28pt range (was 18-28pt) — 18pt was still
-     wrapping "BRAND ACTIVATION"/"TURNKEY DELIVERY" to 2 lines at the
-     narrow end, per feedback: "英文下标题一行展示完整，字体大小随响应式
-     减小". CN stays 20-30pt (much shorter strings, not at risk). */
   .about-capability-card-header-text {
     font-size: clamp(10pt, calc(-19.65pt + 5.29vw), 28pt);
   }
@@ -698,336 +441,79 @@ html[data-lang='zh'] .about-capability-card-list li {
     font-size: clamp(20pt, calc(3.53pt + 2.94vw), 30pt);
   }
 
-  /* Cards are noticeably wider here (2-up instead of 4-up) — spacing
-     bumped up from the 4-column base values to match, same idea as the
-     reference site's own 2-up layout. Header/list gaps switched from em
-     (which tracked the small ambient card font, not the title/content's
-     own much bigger pt sizes above) to their own pt-based clamp so they
-     scale in proportion to the new text size instead of going tight. */
-  .about-capability-card-front {
-    gap: 1.6em;
-    /* Title-to-card-top spacing is 2.5x the shared base padding-top
-       (1.15em -> 2.875em); left/right content-to-card-edge spacing is 2x
-       the shared base (1.25em -> 2.5em). Footer-to-card-bottom spacing now
-       matches the top exactly (also 2.875em), instead of the inherited
-       1.15em it had before. */
-    padding-top: 2.875em;
-    padding-bottom: 2.875em;
-    padding-left: 2.5em;
-    padding-right: 2.5em;
-  }
-
-  .about-capability-card-header {
-    /* No fixed gap here — the list below centers itself vertically
-       between header and footer via auto margins (same approach as the
-       4-per-row desktop tier), so a fixed offset would make that
-       centering lopsided. */
-    margin-bottom: 0;
-  }
-
-  /* Vertically centers the bullet list between the header and the mirrored
-     footer, matching the 4-per-row desktop tier's centering. */
-  .about-capability-card-list {
-    margin-top: auto;
-    margin-bottom: auto;
-    gap: clamp(8pt, 2.5vw, 14pt);
-  }
-
-  .about-capability-card-footer {
-    /* List's own auto margins now handle the centering/bottom-pinning, so
-       this just follows the list with the front's normal gap. Also has to
-       re-enable display here, since the base rule now defaults to
-       display: none for the 4-per-row narrow desktop sub-range. Letter
-       chip removed — normal (not row-reverse) order right-aligns the sole
-       remaining title after rotation, same as the 4-per-row tier. */
-    display: flex;
-    margin-top: 0;
-  }
-
-  /* Footer title mirrors the header title's new 10-28pt size at this
-     tier too. Wrapping is no longer used here (see below) — the lowered
-     floor above is meant to keep it on one line instead. */
-  .about-capability-card-footer-title {
-    font-size: clamp(10pt, calc(-19.65pt + 5.29vw), 28pt);
-  }
-
-  html[data-lang='zh'] .about-capability-card-footer-title {
-    font-size: clamp(20pt, calc(3.53pt + 2.94vw), 30pt);
-  }
-
-  /* Back to nowrap + ellipsis (same safety net as the 4-per-row tier) —
-     the previous round allowed wrapping here, but that let a wrapped
-     title grow the header tall enough to collide with the footer below
-     it. Per feedback: "英文下标题一行展示完整" (the title should display
-     complete on one line), so the fix is a lower font-size floor (see
-     the clamp() above) rather than wrapping. */
-  .about-capability-card-header-text,
-  .about-capability-card-footer-title {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* Body: EN tracks the exact same responsive curve as CN, just 2pt
-     smaller at every width (10-16pt vs CN's 12-18pt) — same vw
-     coefficient (1.76), intercept shifted down by 2. Ellipsis truncation
-     dropped in favor of wrapping to a 2nd line when a bullet doesn't fit
-     on one line, per feedback: "如果英文展示不全，展示两行" — now matches
-     CN's own wrap behavior exactly. */
   .about-capability-card-list li {
-    font-size: clamp(10pt, calc(0.12pt + 1.76vw), 16pt);
-    line-height: 1.28;
-    padding-bottom: clamp(8pt, 2.5vw, 14pt);
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
+    font-size: clamp(9pt, calc(-9pt + 4.5vw), 18pt);
   }
 
   html[data-lang='zh'] .about-capability-card-list li {
-    font-size: clamp(12pt, calc(2.12pt + 1.76vw), 18pt);
-    line-height: 1.36;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
+    font-size: clamp(9pt, calc(-9pt + 4.5vw), 18pt);
+  }
+
+  #home-cards-grid .about-capability-card-front {
+    gap: 1.6em;
+    padding: 2.875em 2.5em;
   }
 }
 
-/* 2-per-row tier, narrowest sliver (560-610px): the mirrored footer title
-   gets removed here — cards are tight enough at this width that it was
-   crowding/overlapping the last bullet item above it. 611-900px keeps the
-   footer as normal. */
-@media (min-width: 560px) and (max-width: 610px) {
-  .about-capability-card-footer {
-    display: none;
-  }
-}
-
-/* 4 cards still stay side by side through here (unchanged from the
-   original breakpoint) — titles were wrapping to 2 lines at this width
-   because the font wasn't shrinking aggressively enough for how narrow
-   each of the 4 cards actually gets. Pulled both the font ceiling and the
-   viewport-scaling rate down hard so "BRAND ACTIVATION" / "TURNKEY
-   DELIVERY" (the longest titles) stay on one line across the whole
-   768-1180px range instead of just at the wide end of it. */
-/* Note: the old separate 768-1180px "4-column, shrink the font" block is
-   gone — the base rules above now use one clamp() spanning the whole
-   >900px range (both this squeezed sub-range and the wide-desktop
-   default), so there's nothing left for a sub-block to override here. */
-
+/* 1-per-row tier (<=559px) — same static/flip-only behavior as the 2-up
+   tier above, single column. */
 @media (max-width: 559px) {
-  #about-capability {
-    font-size: clamp(1rem, 1vw, 1.75rem);
-  }
-
-  #about-capability-title {
-    /* Was a flat 18vw — on a narrow phone that's wide enough to push
-       "EXPERTISE" past the screen edge (clipped, per feedback: 标题...要随
-       屏幕自适应). Clamped so it scales fluidly with viewport width instead
-       of just multiplying vw, and stays inside the safe text width at every
-       phone size from ~320px up to the 767px breakpoint ceiling. */
-    font-size: clamp(2.1rem, 11.5vw, 3.6rem);
-    margin-top: calc(var(--base-padding-y) * 1.4);
-  }
-
-  #about-capability-title-line-2 {
-    left: 0;
-  }
-
-  #about-capability-subheader {
-    position: relative;
-    top: 0;
-    right: auto;
-    width: 100%;
-    margin-top: 1.4em;
-  }
-
-  #about-capability-subheader-text {
-    /* Explicit fluid clamp instead of inheriting a near-flat em chain —
-       same "字体要随屏幕自适应" ask, applied to the body copy too. */
-    font-size: clamp(0.85rem, 3.2vw, 1.05rem);
-  }
-
-  #about-capability-cards-wrapper {
-    margin-top: 2.8em;
-    margin-bottom: calc(var(--vh, 1vh) * 20);
-  }
-
-  #about-capability-cards {
-    perspective: 300vw;
-    height: auto !important;
+  #home-cards-grid {
     display: flex;
     flex-direction: column;
     gap: 1.2em;
+    min-height: 0;
+    height: auto !important;
   }
 
-  .about-capability-card {
+  #home-cards-grid .about-capability-card {
     position: relative;
+    top: auto;
+    left: auto;
     width: 100%;
     max-width: none;
     font-size: clamp(0.76rem, 2.05vw, 0.95rem);
-    left: auto !important;
-    top: auto !important;
-    /* Was `transform: none !important` — that silently killed the JS-driven
-       rotateY scroll-flip on mobile (HomeHeroTimeline's applyCardsFromSection
-       already computes a per-card rotateY for <=767px, it just never
-       rendered). Removed so each card flips from back → front as it scrolls
-       into view, same interaction as desktop — per feedback: "这几张卡片的
-       交互小屏幕里也要有翻动的效果". */
   }
 
-  /* Back face now stays visible on mobile too, so the flip actually shows
-     the card-back pattern mid-rotation instead of a blank gap. */
+  .about-capability-card-header-text {
+    font-size: clamp(10pt, calc(-3.6pt + 6vw), 18pt);
+  }
 
-  /* Title/body font sizes for this 1-per-row tier are now split into two
-     narrower sub-ranges (360-559px and <360px) instead of one continuous
-     clamp spanning the whole tier — see the two @media blocks right after
-     this one's closing brace. Everything else here (layout, letter size,
-     gaps, footer pin) stays shared across both sub-ranges. */
+  html[data-lang='zh'] .about-capability-card-header-text {
+    font-size: clamp(12pt, calc(-1.6pt + 6vw), 20pt);
+  }
 
-  /* Single card fills the full width here — the widest a card ever gets —
-     so spacing goes further than the 2-up tier, not back down to tight.
-     Header/list gaps switched from em (tracking the small ambient card
-     font, not the title/content's own much bigger pt sizes above) to a
-     pt-based clamp so they scale in proportion to the new text size. */
-  .about-capability-card-front {
+  .about-capability-card-list li {
+    font-size: clamp(6pt, calc(-6pt + 5vw), 12pt);
+  }
+
+  html[data-lang='zh'] .about-capability-card-list li {
+    font-size: clamp(6pt, calc(-6pt + 5vw), 12pt);
+  }
+
+  .about-capability-card-footer-title {
+    font-size: clamp(10pt, calc(-3.6pt + 6vw), 18pt);
+  }
+
+  html[data-lang='zh'] .about-capability-card-footer-title {
+    font-size: clamp(12pt, calc(-1.6pt + 6vw), 20pt);
+  }
+
+  #home-cards-grid .about-capability-card-front {
     gap: 1.9em;
-  }
-
-  .about-capability-card-header {
-    margin-bottom: clamp(16pt, 7vw, 32pt);
-  }
-
-  /* Cancel the 4-per-row tier's auto-margin vertical centering — this
-     1-up tier keeps its original footer-pinned-to-bottom layout (the
-     centering ask was specific to the desktop 4-up card). */
-  .about-capability-card-list {
-    margin-top: 0;
-    margin-bottom: 0;
-    gap: clamp(12pt, 5vw, 24pt);
-  }
-
-  .about-capability-card-footer {
-    /* Re-enable display here — the base rule now defaults to display:
-       none for the 4-per-row narrow desktop sub-range. */
-    display: flex;
-    margin-top: auto;
-  }
-
-  /* Body font-size now set per sub-range below; padding-bottom/line-height
-     stay shared here across both sub-ranges. */
-  .about-capability-card-list li {
-    line-height: 1.3;
-    padding-bottom: clamp(12pt, 5vw, 24pt);
-  }
-
-  html[data-lang='zh'] .about-capability-card-list li {
-    line-height: 1.4;
+    padding: 1.9em 1.6em;
   }
 }
 
-/* 1-per-row tier, upper sub-range (360-559px): title 18-30pt EN / 20-32pt
-   CN, body 12-22pt (two-point fluid fit). Also adds the mirrored footer
-   title (matching the header's size) and widens the card's inner padding
-   for this sub-range specifically — title-to-card-top spacing is 2.5x the
-   shared base padding-top (1.15em -> 2.875em), left/right content-to-edge
-   spacing is 2x the shared base (1.25em -> 2.5em). */
-@media (min-width: 360px) and (max-width: 559px) {
-  .about-capability-card-header-text {
-    font-size: clamp(18pt, calc(-3.6pt + 6vw), 30pt);
-  }
 
-  html[data-lang='zh'] .about-capability-card-header-text {
-    font-size: clamp(20pt, calc(-1.6pt + 6vw), 32pt);
-  }
-
-  /* Content vertically centers between the header and footer titles here
-     (same auto-margin technique as the other tiers) — overrides the
-     shared <560px block's fixed margin-top/bottom: 0. Font-size stays
-     fluid via the clamp() above, so the centering re-balances itself
-     automatically as the text (and therefore the leftover space) changes
-     size across this sub-range. */
-  .about-capability-card-list {
-    margin-top: auto;
-    margin-bottom: auto;
-  }
-
-  .about-capability-card-list li {
-    font-size: clamp(12pt, calc(-6pt + 5vw), 22pt);
-  }
-
-  html[data-lang='zh'] .about-capability-card-list li {
-    font-size: clamp(12pt, calc(-6pt + 5vw), 22pt);
-  }
-
-  .about-capability-card-front {
-    /* Footer-title-to-card-bottom spacing now matches header-title-to-
-       card-top spacing exactly (both 2.875em). */
-    padding-top: 2.875em;
-    padding-bottom: 2.875em;
-    padding-left: 2.5em;
-    padding-right: 2.5em;
-  }
-
-  .about-capability-card-footer {
-    /* List's auto margins now handle bottom-pinning, so cancel the
-       shared <560px block's margin-top: auto here. Letter chip removed —
-       normal flex order right-aligns the sole remaining title once the
-       180deg rotation flips it, same as the wider tiers. */
-    margin-top: 0;
-  }
-
-  .about-capability-card-footer-title {
-    font-size: clamp(18pt, calc(-3.6pt + 6vw), 30pt);
-  }
-
-  html[data-lang='zh'] .about-capability-card-footer-title {
-    font-size: clamp(20pt, calc(-1.6pt + 6vw), 32pt);
-  }
-}
-
-/* 1-per-row tier, narrowest sub-range (<360px): same underlying fluid
-   formulas as the 360-559px sub-range above (so the curve is continuous
-   across the 360px boundary, no jump). Floors dropped much lower than
-   before (16/18/10pt -> 10/12/6pt) so text keeps auto-shrinking on very
-   narrow phones instead of holding flat and risking overflow past the
-   card edge — per feedback: "所有文字都自动缩小以至于卡片内能展示完整".
-   No padding/centering/footer-order overrides here — those were scoped
-   to the 360-559px sub-range only. */
-@media (max-width: 359px) {
-  .about-capability-card-header-text {
-    font-size: clamp(10pt, calc(-3.6pt + 6vw), 18pt);
-  }
-
-  html[data-lang='zh'] .about-capability-card-header-text {
-    font-size: clamp(12pt, calc(-1.6pt + 6vw), 20pt);
-  }
-
-  .about-capability-card-list li {
-    font-size: clamp(6pt, calc(-6pt + 5vw), 12pt);
-  }
-
-  html[data-lang='zh'] .about-capability-card-list li {
-    font-size: clamp(6pt, calc(-6pt + 5vw), 12pt);
-  }
-
-  .about-capability-card-footer-title {
-    font-size: clamp(10pt, calc(-3.6pt + 6vw), 18pt);
-  }
-
-  html[data-lang='zh'] .about-capability-card-footer-title {
-    font-size: clamp(12pt, calc(-1.6pt + 6vw), 20pt);
-  }
-}
-
-/* —— Process overview: home-hero panel 4 ——
-   Was a standalone section with its own scroll-into-view reveal; now lives
-   inside #home-hero-track as the 4th pinned/horizontal-slide panel (see
-   applyProgress's panel-4 handling in HomeHeroTimeline.ts), matching
-   panels 1-3's mechanics instead of a separate IntersectionObserver.
-   #process-overview reuses the shared .home-panel-inner class for its
-   base inset/padding (see that rule above). No opaque background here —
-   sits on the same floating-photo WebGL backdrop as panels 2/3, per
-   feedback: "4不是黑色背景，跟2，3一样，都是放在悬浮照片上" (this had an
+/* —— Process overview: home-hero panel 2 ——
+   Was a standalone section with its own scroll-into-view reveal, then
+   panel 4; reordered to panel 2 per feedback ("按照图片里的顺序") so the
+   full-service pipeline reads right after the opening title, before the
+   story panel. #process-overview reuses the shared .home-panel-inner class
+   for its base inset/padding (see that rule above). No opaque background
+   here — sits on the same floating-photo WebGL backdrop as the other
+   panels, per feedback: "不是黑色背景...都是放在悬浮照片上" (this had an
    opaque #080a0f ::before mask at first; removed). */
 #process-overview {
   z-index: 1;
@@ -1040,10 +526,9 @@ html[data-lang='zh'] .about-capability-card-list li {
      离顶部的距离一样，2按照1的距离调整". */
   padding-top: calc(var(--base-padding-y) * 3.3);
   color: var(--color-off-white);
-  /* .home-panel has pointer-events: none (panels 1-3 have no interactive
-     content) — this panel needs its hover states + the next-arrow click
-     to work, so re-enable here. Auto on a descendant overrides an
-     ancestor's none. */
+  /* .home-panel has pointer-events: none (panels without interactive
+     content default to this) — this panel needs its hover states to work,
+     so re-enable here. Auto on a descendant overrides an ancestor's none. */
   pointer-events: auto;
 }
 
@@ -1064,16 +549,22 @@ html[data-lang='zh'] .about-capability-card-list li {
 }
 
 .process-overview-title {
-  /* Doubled per feedback: "流程图和标题的距离可以扩大一点，现在距离的两倍". */
-  margin: 0 0 clamp(3.6rem, 7.2vw, 6.4rem);
-  /* Generous cap so the copy wraps naturally (like .hero-secondary-title)
-     rather than hitting an early forced break — a longer version of this
-     copy used 30ch at this same font-size without overflow issues, so
-     this stays comfortably in that proven range. */
+  /* Doubled per feedback: "流程图和标题的距离可以扩大一点，现在距离的两倍",
+     then doubled again per follow-up: "3的距离扩大一倍" (was
+     clamp(3.6rem, 7.2vw, 6.4rem) -> clamp(7.2rem, 14.4vw, 12.8rem)), then
+     scaled to 0.8x specifically for the 4-per-row desktop tier per
+     follow-up: "一行4个的时候，标题到时间轴的间距缩小为现在的0.8倍" — the
+     560-900px/≤559px tiers override this margin-bottom with their own
+     fixed value below and are untouched by this change, per that same
+     feedback: "其他尺寸一行2个和1的时候间距不变". */
+  margin: 0 0 clamp(5.76rem, 11.52vw, 10.24rem);
+  /* Generous cap so the copy wraps naturally rather than hitting an early
+     forced break — a longer version of this copy used 30ch at this same
+     font-size without overflow issues, so this stays comfortably in that
+     proven range. */
   max-width: 34ch;
-  /* Matches .hero-secondary-title / .story-detail-title (panels 2 and 3)
-     exactly, per feedback: "4，5，6的字体大小是一样的" (4 = this title,
-     5 = panel 3's title, 6 = panel 2's title). */
+  /* Matches .story-detail-title's size, per earlier feedback matching this
+     title's size to its sibling panel titles. */
   font-size: clamp(2.4rem, 6.2vw, 6.4rem);
   font-weight: 500;
   line-height: 1.02;
@@ -1203,13 +694,22 @@ html[data-lang='zh'] .process-overview-title {
 
 .process-step-index {
   display: block;
-  margin-bottom: 0.2em;
+  /* rem (root-relative), not em — em was relative to this element's own
+     font-size, which shrinks a lot across the responsive tiers, so the
+     gap to the title below kept shrinking right along with it and
+     eventually overlapped at narrow widths. rem stays a fixed distance
+     regardless of tier, per feedback: "数字01等到标题的距离是固定的，现在
+     不对，现在随着屏幕变小，距离变小，甚至跟文字重合了". */
+  margin-bottom: 0.6rem;
   font-family: var(--font-mono);
   font-size: clamp(2.4rem, 4.2vw, 4rem);
   font-weight: 500;
   line-height: 1;
   color: var(--color-off-white);
-  opacity: 0.16;
+  /* Raised from 0.16 — was hard to read and, combined with the title
+     overlapping it below, looked like a rendering glitch rather than a
+     deliberate ghost-numeral. Per feedback: "数字的颜色可以明显一点点". */
+  opacity: 0.32;
   transition: opacity 0.35s ease, color 0.35s ease;
 }
 
@@ -1217,7 +717,11 @@ html[data-lang='zh'] .process-overview-title {
   position: relative;
   z-index: 1;
   margin: 0 0 0.4em;
-  margin-top: -0.85em;
+  /* The previous negative margin-top pulled the title up to overlap the
+     index number above it — per feedback the gap should never be zero/
+     negative ("这个间距一直为0"), so this is removed: title now sits
+     cleanly below the number with .process-step-index's own margin-bottom
+     as the only gap between them. */
   font-size: clamp(1.15rem, 1.6vw, 1.6rem);
   font-weight: 500;
   text-transform: uppercase;
@@ -1242,7 +746,7 @@ html[data-lang='zh'] .process-overview-title {
    after a tap on touch devices. */
 @media (hover: hover) and (pointer: fine) {
   .process-step:hover .process-step-index {
-    opacity: 0.32;
+    opacity: 0.55;
   }
 
   .process-step:hover .process-step-desc {
@@ -1254,13 +758,17 @@ html[data-lang='zh'] .process-overview-title {
   }
 }
 
-@media (max-width: 900px) {
-  /* Panel 4 is a fixed 100vh pinned slide with overflow: hidden — unlike a
-     normal section, there's no scroll escape hatch if content runs long,
-     so everything below trims aggressively for vertical fit rather than
-     just narrowing horizontally. */
+/* Responsive tiers match the expertise cards' own breakpoints exactly
+   (>=901px fan/4-up, 560-900px 2-up, <=559px 1-up), per feedback: "这里响应
+   式的break point和卡片页面一样，一行4个，一行2个，一行1个". Every tier
+   keeps padding-top at the shared base value (see .process-overview's base
+   rule) instead of shrinking it — a smaller multiplier here used to come
+   out lower than the fixed header's own rendered height and the title
+   visually collided with the "大方" logo, per feedback: "标题跟hero menu的
+   距离和其他页面一样". Description text is never hidden at any tier per
+   feedback: "描述文字都要展示出来". */
+@media (min-width: 560px) and (max-width: 900px) {
   #process-overview {
-    padding-top: calc(var(--base-padding-y) * 1.6);
     padding-bottom: calc(var(--base-padding-y) * 1.2);
   }
 
@@ -1275,7 +783,9 @@ html[data-lang='zh'] .process-overview-title {
 
   .process-overview-steps {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    row-gap: clamp(1.4rem, 3.5vw, 2.2rem);
+    /* 1.5x the previous clamp(1.4rem, 3.5vw, 2.2rem), per feedback: "4的
+       距离改为现在的1.5倍" (row-1-to-row-2 gap at the 2-up tier). */
+    row-gap: clamp(2.1rem, 5.25vw, 3.3rem);
   }
 
   .process-overview-steps::before {
@@ -1296,22 +806,18 @@ html[data-lang='zh'] .process-overview-title {
   }
 }
 
-@media (max-width: 640px) {
-  /* Descriptions are the first thing to go at very short viewport heights
-     — number + title stays scannable on its own, and dropping the desc
-     line is what actually buys back enough vertical room to guarantee the
-     4-step grid fits inside the fixed 100vh panel. */
-  .process-step-desc {
-    display: none;
+@media (max-width: 559px) {
+  #process-overview {
+    padding-bottom: calc(var(--base-padding-y) * 1.2);
   }
-}
 
-@media (max-width: 560px) {
   .process-overview-eyebrow {
+    margin-bottom: 0.6em;
     font-size: 0.75rem;
   }
 
   .process-overview-title {
+    margin-bottom: clamp(1.4rem, 4vw, 2.2rem);
     font-size: clamp(1.25rem, 5.5vw, 1.7rem);
     max-width: 20ch;
   }
@@ -1321,11 +827,26 @@ html[data-lang='zh'] .process-overview-title {
   }
 
   .process-overview-steps {
-    row-gap: 1.1rem;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    /* Same 1.5x bump as the 2-up tier (was 1.1rem flat). */
+    row-gap: 1.65rem;
+  }
+
+  .process-overview-steps::before {
+    display: none;
+  }
+
+  .process-step-dot {
+    display: none;
+  }
+
+  .process-step {
+    padding-top: 0.8em;
   }
 
   .process-step-index {
     font-size: 1.6rem;
+    margin-bottom: 0.1em;
   }
 
   .process-step-title {

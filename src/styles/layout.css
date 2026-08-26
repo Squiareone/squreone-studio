@@ -102,95 +102,34 @@ html[data-lang='zh'] .hero-image-label {
 }
 
 /*
- * Lusion #about-who-team-faces analogue — LEFT hit region only.
- * Face-cursor appears only while eased pointer is inside this box
- * (right side stays clear for reading, same as Lusion team-right).
+ * Home hero "CONTINUE TO SCROLL" pill (#home-continue-pill) — replaces the
+ * old Lusion cursor-following arrow (#story-next-arrow/#story-next-cursor-
+ * zone, both retired). Reuses .end-bottom's own look (see home-hero.css)
+ * for the pill shape/marquee/arrow-bounce, just needs its own fixed
+ * viewport position + show/hide here since .end-bottom itself is
+ * positioned absolute (relative to the Cases finale frame) and hidden via
+ * inline GSAP opacity, neither of which apply to this second instance.
+ * Visibility is toggled by HomeHeroTimeline.ts once the cards panel (last
+ * step) is active. Uses the #id selector (not .home-continue-pill) so it
+ * reliably overrides .end-bottom's own position/opacity/transform — both
+ * are single-class-or-id selectors of equal specificity, and home-hero.css
+ * (where .end-bottom lives) is @imported AFTER this file, so without the
+ * extra specificity bump .end-bottom's rule would win the cascade.
  */
-#story-next-cursor-zone {
+#home-continue-pill {
   position: fixed;
-  left: 0;
-  top: 0;
-  /* ~Lusion faces: large left mass; right column reserved for copy */
-  width: min(70vw, 58rem);
-  height: 100%;
+  left: 50%;
+  bottom: clamp(28px, 6vh, 64px);
+  top: auto;
+  transform: translate(-50%, 12px);
+  z-index: 40;
+  opacity: 0;
   pointer-events: none;
-  z-index: 0;
-  /* debug: outline: 1px solid rgba(255,0,0,.2); */
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@media (max-width: 767px) {
-  #story-next-cursor-zone {
-    /* Mobile has no face-cursor; zone unused */
-    display: none;
-  }
-}
-
-/*
- * Lusion #about-who-face-cursor (about.CNa9RfUh.css) — fixed to viewport.
- * Desktop: JS sets display flex/none + transform every frame (pointer-events:none).
- */
-#story-next-arrow {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 8.6rem;
-  height: 8.6rem;
-  border-radius: 100%;
-  border: none;
-  padding: 0;
-  margin: 0;
-  /* Match menu btn: #header-right-menu-btn */
-  background: var(--color-dark-white);
-  color: var(--color-black);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 58;
-  transform: scale(0);
-  /* Critical Lusion rule: disc never captures the pointer — system cursor stays on the mouse */
-  pointer-events: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-#story-next-arrow-svg {
-  width: 30%;
-  height: 30%;
-  display: block;
-  overflow: visible;
-  transform-box: fill-box;
-  transform-origin: center center;
-  pointer-events: none;
-}
-
-@media (min-aspect-ratio: 21/9) {
-  #story-next-arrow {
-    width: 9em;
-    height: 9em;
-  }
-}
-
-/* Mobile: Lusion hides face-cursor; keep fixed center continue */
-@media (max-width: 767px) {
-  #story-next-arrow {
-    left: 50%;
-    top: 64%;
-    width: 5.2rem;
-    height: 5.2rem;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transform: translate3d(-50%, -50%, 0) scale(0.6);
-    transition:
-      opacity 0.35s ease,
-      visibility 0.35s ease,
-      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  #story-next-arrow.is-visible {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    cursor: pointer;
-    transform: translate3d(-50%, -50%, 0) scale(1);
-  }
+#home-continue-pill.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
 }

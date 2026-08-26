@@ -117,9 +117,16 @@ export class AboutHero {
   // pill floating over them, so the label is suppressed while that section
   // is the one in view.
   private labelSuppressEl: HTMLElement | null = null;
+  // Raw client coords (not NDC) so occlusion can be tested with
+  // elementFromPoint — see the occlusion check in update(). Start off-screen
+  // to match pointerNDC's initial off-screen state.
+  private pointerClientX = -9999;
+  private pointerClientY = -9999;
   private readonly onPointerMove = (e: PointerEvent) => {
     this.pointerNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
     this.pointerNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    this.pointerClientX = e.clientX;
+    this.pointerClientY = e.clientY;
   };
 
   constructor(
@@ -637,8 +644,24 @@ export class AboutHero {
         sectionSuppressesLabel = rect.top <= viewportMid && rect.bottom >= viewportMid;
       }
 
+      // General occlusion check — per feedback: "前面有遮挡的时候，鼠标hover
+      // 背景图片还是会显示这种pill的解释说明，这个交互不好，去掉". The section
+      // check above only covers one specific case (Cases & Scenarios); this
+      // covers ANY foreground UI sitting in front of the canvas at the
+      // cursor's actual screen position (expertise cards, hero panels with
+      // interactive content, etc). elementFromPoint respects pointer-events,
+      // so purely decorative panels (pointer-events: none, the default on
+      // .home-panel) are transparently skipped and still resolve to the
+      // canvas underneath — only genuinely opaque/interactive foreground
+      // elements (pointer-events: auto) count as occluding.
+      let pointerOccluded = false;
+      if (this.pointerClientX > -1000) {
+        const topEl = document.elementFromPoint(this.pointerClientX, this.pointerClientY);
+        pointerOccluded = !!topEl && topEl !== this.engine.canvas;
+      }
+
       if (this.labelEl && this.labelTextEl) {
-        if (this.hoveredIndex >= 0 && !sectionSuppressesLabel) {
+        if (this.hoveredIndex >= 0 && !sectionSuppressesLabel && !pointerOccluded) {
           const item = this.miniObjects[this.hoveredIndex];
           this.tmpV3.copy(item.sprite.position).project(camera);
           const behindCamera = this.tmpV3.z > 1;
