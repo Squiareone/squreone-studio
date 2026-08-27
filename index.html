@@ -340,6 +340,33 @@ One at a Time</h1>
                           </div>
                         </article>
                       </div>
+                      <!-- Click affordance for the mobile card carousel (<=900px, see
+                           home-hero.css / HomeHeroTimeline.ts) — swipe alone wasn't a
+                           reliable/discoverable way to reach the other cards, per
+                           feedback: "可以出现跑马灯的UI组件，或类似箭头，用户可点击
+                           看到下一个卡片". Hidden on the desktop fan tier via CSS. -->
+                      <button
+                        type="button"
+                        id="home-cards-prev"
+                        class="home-cards-arrow home-cards-arrow--prev"
+                        aria-label="Previous card"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+                      </button>
+                      <button
+                        type="button"
+                        id="home-cards-next"
+                        class="home-cards-arrow home-cards-arrow--next"
+                        aria-label="Next card"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+                      </button>
+                      <div id="home-cards-dots" class="home-cards-dots" aria-hidden="true">
+                        <span class="home-cards-dot"></span>
+                        <span class="home-cards-dot"></span>
+                        <span class="home-cards-dot"></span>
+                        <span class="home-cards-dot"></span>
+                      </div>
                     </div>
                   </div>
                 </div>

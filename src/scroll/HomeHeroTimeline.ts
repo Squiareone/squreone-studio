@@ -69,6 +69,9 @@ export function initHomeHeroTimeline(scrollTo: ScrollToFn, onProgress?: (p: numb
   const processPanel = document.getElementById('process-overview');
   const cardsPanel = document.getElementById('home-cards-panel');
   const cardsGridEl = document.getElementById('home-cards-grid');
+  const cardsPrevBtn = document.getElementById('home-cards-prev');
+  const cardsNextBtn = document.getElementById('home-cards-next');
+  const cardsDots = Array.from(document.querySelectorAll<HTMLElement>('#home-cards-dots .home-cards-dot'));
   const expertiseCards = Array.from(
     document.querySelectorAll<HTMLElement>('#home-cards-grid .about-capability-card'),
   );
@@ -268,6 +271,14 @@ export function initHomeHeroTimeline(scrollTo: ScrollToFn, onProgress?: (p: numb
     cardsPanel?.classList.toggle('is-visible', idx === 3);
     continuePill?.classList.toggle('is-visible', idx === STEP_COUNT - 1);
     animateCards(idx === 3);
+    // Below the fan tier (<=900px) the cards are a horizontal scroll-snap
+    // carousel (#home-cards-grid, see home-hero.css) — reset to card 1 on
+    // arrival so re-entering the panel always starts from the beginning,
+    // not wherever a previous visit left it scrolled to.
+    if (idx === 3 && cardsGridEl) {
+      cardsGridEl.scrollLeft = 0;
+      syncCardsNav();
+    }
   };
 
   const st = ScrollTrigger.create({
@@ -392,6 +403,66 @@ export function initHomeHeroTimeline(scrollTo: ScrollToFn, onProgress?: (p: numb
     }, WHEEL_COOLDOWN);
   };
 
+  // Below the fan tier the cards are a horizontal scroll-snap carousel
+  // (#home-cards-grid, see home-hero.css) — one card fills the panel at a
+  // time, swipe left/right (native scroll, untouched by this file) moves
+  // between them. A vertical swipe/wheel-down on the cards step should only
+  // continue on to Cases & Scenarios once the carousel has actually reached
+  // the last card — otherwise it's swallowed so the pin stays put while
+  // there are still cards to see. On the fan tier (>=901px) the carousel
+  // never scrolls (all 4 cards fit at once), so this is always "at last
+  // card" there. Per feedback: "现在都是截断的，可以改成小屏下，变成一张张
+  // 卡片左右滑动么？...等展示完第四张之后，再向下滑动？".
+  const CARDS_SCROLL_EPS = 2;
+  const cardsGridAtLastCard = (): boolean => {
+    if (!cardsGridEl) return true;
+    return cardsGridEl.scrollLeft + cardsGridEl.clientWidth >= cardsGridEl.scrollWidth - CARDS_SCROLL_EPS;
+  };
+  const cardsGridAtFirstCard = (): boolean => {
+    if (!cardsGridEl) return true;
+    return cardsGridEl.scrollLeft <= CARDS_SCROLL_EPS;
+  };
+
+  // Prev/next click affordance for the carousel — swipe alone wasn't
+  // reliable/discoverable enough on its own, per feedback: "可以出现跑马灯
+  // 的UI组件，或类似箭头，用户可点击看到下一个卡片". Also doubles as the
+  // single source of truth for the dot indicator + arrow disabled state,
+  // kept in sync with wherever scrollLeft actually ends up (swipe, arrow
+  // click, or the scrollLeft=0 reset in setPanelClasses).
+  const scrollCardsBy = (dir: number) => {
+    if (!cardsGridEl) return;
+    cardsGridEl.scrollBy({ left: dir * cardsGridEl.clientWidth, behavior: 'smooth' });
+  };
+  const syncCardsNav = () => {
+    if (!cardsGridEl || !expertiseCards.length) return;
+    const atFirst = cardsGridAtFirstCard();
+    const atLast = cardsGridAtLastCard();
+    if (cardsPrevBtn) (cardsPrevBtn as HTMLButtonElement).disabled = atFirst;
+    if (cardsNextBtn) (cardsNextBtn as HTMLButtonElement).disabled = atLast;
+    if (cardsDots.length) {
+      // Page count is derived from actual scroll geometry, not assumed to
+      // equal the card count — at the 560-900px tier each "page" is 2
+      // cards (only the odd cards are scroll-snap points, see
+      // home-hero.css), so there are only 2 real pages there even though
+      // there are 4 dot elements in the DOM; at <=559px each card is its
+      // own page, so all 4 are real. Extra dot elements beyond the actual
+      // page count are hidden rather than left dead/inactive.
+      const clientWidth = Math.max(1, cardsGridEl.clientWidth);
+      const pageCount = Math.min(cardsDots.length, Math.max(1, Math.round(cardsGridEl.scrollWidth / clientWidth)));
+      const idx = Math.min(pageCount - 1, Math.max(0, Math.round(cardsGridEl.scrollLeft / clientWidth)));
+      cardsDots.forEach((dot, i) => {
+        dot.style.display = i < pageCount ? '' : 'none';
+        dot.classList.toggle('is-active', i === idx);
+      });
+    }
+  };
+  const onCardsPrevClick = () => scrollCardsBy(-1);
+  const onCardsNextClick = () => scrollCardsBy(1);
+  cardsPrevBtn?.addEventListener('click', onCardsPrevClick);
+  cardsNextBtn?.addEventListener('click', onCardsNextClick);
+  cardsGridEl?.addEventListener('scroll', syncCardsNav, { passive: true });
+  window.addEventListener('resize', syncCardsNav);
+
   const onWheel = (e: WheelEvent) => {
     // `animating` (our own explicit hold, extended through the cards'
     // full entrance/retract) MUST be checked before st.isActive — the
@@ -412,10 +483,22 @@ export function initHomeHeroTimeline(scrollTo: ScrollToFn, onProgress?: (p: numb
       wheelAccum = 0;
       return;
     }
+    // On the cards step, a predominantly-horizontal wheel gesture (trackpad
+    // two-finger swipe) is the card carousel's own native scroll — leave it
+    // alone so it isn't misread as vertical pagination.
+    if (currentStep === STEP_COUNT - 1 && Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      wheelAccum = 0;
+      return;
+    }
     const dir = e.deltaY > 0 ? 1 : -1;
     if (currentStep === 0 && dir < 0) {
       wheelAccum = 0;
       return; // let it scroll up out of the pin normally
+    }
+    if (currentStep === STEP_COUNT - 1 && dir > 0 && !cardsGridAtLastCard()) {
+      e.preventDefault();
+      wheelAccum = 0;
+      return; // still browsing the card carousel — swipe through it first
     }
     // Leaving the last (cards) step forward now requires the same
     // deliberate full-gesture threshold as every other step transition
@@ -441,9 +524,11 @@ export function initHomeHeroTimeline(scrollTo: ScrollToFn, onProgress?: (p: numb
   };
   window.addEventListener('wheel', onWheel, { passive: false });
 
+  let touchStartX = 0;
   let touchStartY = 0;
   let touchHandled = false;
   const onTouchStart = (e: TouchEvent) => {
+    touchStartX = e.touches[0]?.clientX ?? 0;
     touchStartY = e.touches[0]?.clientY ?? 0;
     touchHandled = false;
   };
@@ -458,9 +543,36 @@ export function initHomeHeroTimeline(scrollTo: ScrollToFn, onProgress?: (p: numb
     }
     if (!st.isActive || touchHandled || locked) return;
     const y = e.touches[0]?.clientY ?? touchStartY;
+    const x = e.touches[0]?.clientX ?? touchStartX;
     const delta = touchStartY - y;
+    const deltaX = touchStartX - x;
+    // On the cards step, don't commit to treating this as a vertical
+    // pagination gesture (and therefore never call preventDefault) until
+    // movement is large enough to be unambiguous AND vertical-dominant.
+    // The first few pixels of a horizontal card-swipe are naturally a
+    // little diagonal — and calling preventDefault even once during a
+    // touchmove permanently cancels the browser's native scroll for that
+    // whole gesture, which silently killed the carousel entirely (any
+    // early jittery reading that leaned vertical was enough to lock it
+    // out). Per feedback: "只展示了一张卡片，滑动也看不到其他的了" (swiping
+    // wasn't reaching the other cards). Below the deadzone, or whenever
+    // horizontal movement leads, just defer and let native scroll decide.
+    if (currentStep === STEP_COUNT - 1) {
+      // Larger deadzone + a real dominance margin (not just "barely more"),
+      // so a normal thumb swipe that starts a little diagonally still
+      // reads as horizontal — a false "vertical" read here is much more
+      // costly than the reverse (it permanently kills native scroll for
+      // the rest of this touch), so this errs toward treating ambiguous
+      // movement as horizontal/carousel input.
+      const CARDS_AXIS_LOCK_PX = 24;
+      if (Math.abs(delta) < CARDS_AXIS_LOCK_PX || Math.abs(delta) < Math.abs(deltaX) * 1.4) return;
+    }
     const dir = delta > 0 ? 1 : -1;
     if (currentStep === 0 && dir < 0) return;
+    if (currentStep === STEP_COUNT - 1 && dir > 0 && !cardsGridAtLastCard()) {
+      e.preventDefault();
+      return; // still browsing the card carousel — swipe through it first
+    }
     // Same full-swipe requirement leaving the last step forward as the
     // wheel handler above — no more releasing on first touch movement.
     if (Math.abs(delta) < TOUCH_THRESHOLD) {
@@ -515,6 +627,10 @@ export function initHomeHeroTimeline(scrollTo: ScrollToFn, onProgress?: (p: numb
     window.removeEventListener('touchmove', onTouchMove);
     continuePill?.removeEventListener('click', onPillClick);
     window.removeEventListener('resize', onCardsResize);
+    cardsPrevBtn?.removeEventListener('click', onCardsPrevClick);
+    cardsNextBtn?.removeEventListener('click', onCardsNextClick);
+    cardsGridEl?.removeEventListener('scroll', syncCardsNav);
+    window.removeEventListener('resize', syncCardsNav);
     window.clearTimeout(lockTimer);
     window.clearTimeout(stepUnlockTimer);
     cardTween?.kill();

@@ -206,6 +206,22 @@ html[data-lang='zh'] .story-detail-title {
   z-index: 1;
   display: flex;
   align-items: center;
+  /* .home-panel has pointer-events: none (panels without interactive
+     content default to this) — re-enabled here so the mobile card
+     carousel's native touch-scroll (#home-cards-grid, see the <=900px tier
+     below) can actually receive touch input; without this, pointer-events
+     inherits "none" and the browser never routes swipe gestures to it. */
+  pointer-events: auto;
+}
+
+/* Prev/next arrows + dot indicator for the mobile card carousel — a click
+   affordance alongside the swipe, since swipe alone wasn't reliable/
+   discoverable enough on its own. Desktop-only (fan tier) hides all of
+   this; see the <=900px tier further below for the visible styling. Per
+   feedback: "可以出现跑马灯的UI组件，或类似箭头，用户可点击看到下一个卡片". */
+.home-cards-arrow,
+.home-cards-dots {
+  display: none;
 }
 
 /* Card layout/positioning mirrors the original "Area of Expertise" section
@@ -412,41 +428,116 @@ html[data-lang='zh'] .about-capability-card-footer-title {
   font-size: clamp(14pt, calc(1.11pt + 1.43vw), 24pt);
 }
 
-/* 2-per-row tier (560-900px) — cards drop out of the absolute fan into a
-   normal static grid, same as the original; JS only flips them in place
-   here (no translate), matching the original's own mobile behavior. */
+/* 2-per-row tier (560-900px), restored per feedback ("加上一行两个卡片的
+   情况，根据之前的break point") — but showing all 4 cards as two STACKED
+   rows still needed both rows to fit the pinned viewport at once, which
+   ran into the exact same cutoff problem on shorter/landscape viewports
+   (per feedback screenshot: second row + mirrored footer text running
+   under the header/pill). Changed to a horizontal scroll-snap carousel
+   like the <=559px tier below, but paged two cards at a time instead of
+   one — only ONE row ever needs to fit vertically, and the prev/next
+   arrows (shared styling further below) move a full pair at a time. Per
+   feedback: "一行两个卡片的时候不用四个都展示完，也可以展示两个，然后用
+   跑马灯的箭头形式可以移动到剩下两个卡片". scroll-snap-align only on the
+   odd cards (1st of each pair) is what makes a "page" mean 2 cards instead
+   of 1 — see cardsGridAtLastCard()/syncCardsNav() in HomeHeroTimeline.ts,
+   which already work in terms of "pages" (scrollWidth/clientWidth), not a
+   hardcoded card count, so they need no changes for this. */
 @media (min-width: 560px) and (max-width: 900px) {
+  #home-cards-panel {
+    align-items: center;
+    overflow: hidden;
+    padding-bottom: clamp(72px, 12vh, 104px);
+  }
+
   #home-cards-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-flow: row nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
     gap: 1.05em;
     min-height: 0;
     height: auto !important;
+    scrollbar-width: none;
+  }
+
+  #home-cards-grid::-webkit-scrollbar {
+    display: none;
   }
 
   #home-cards-grid .about-capability-card {
     position: relative;
     top: auto;
     left: auto;
-    width: 100%;
-    max-width: none;
+    flex: 0 0 calc(50% - 0.525em);
+    /* Capped by max-width (not an independent max-height) so the box's
+       actual height still comes from aspect-ratio, staying internally
+       consistent — an explicit max-height alone left the box shorter than
+       its text content needed (font-size was still vw-based, i.e. sized
+       off the full viewport, unrelated to how much the box itself had
+       shrunk), which is exactly what caused the footer to overlap the
+       last list item in the feedback screenshot. Converting to a
+       container query (below) so type actually tracks the box's own size
+       fixes that at the source. min-width keeps it from also going too
+       small if the viewport is very short. (max-width — not width — is
+       used here since flex-basis above already takes precedence over
+       width for a flex item's main-axis size; max/min-width still apply
+       as clamps on top of that.) Raised from 40vh — that was capping the
+       card well short of the space actually available, leaving a big gap
+       above the pill, per feedback: "可以考虑高度变高一点？现在距离下面
+       的按钮有点宽". */
+    max-width: 48vh;
+    min-width: min(calc(50% - 0.525em), 180px);
+    scroll-snap-stop: always;
+    container-type: inline-size;
     font-size: clamp(0.74rem, 1.35vw, 0.86rem);
+    border-radius: clamp(14px, 3vw, 22px);
   }
 
+  #home-cards-grid .about-capability-card-front,
+  #home-cards-grid .about-capability-card-back {
+    border-radius: inherit;
+  }
+
+  /* Only the first card of each pair is a snap point, so one "page" of
+     the carousel is 2 cards wide, not 1. */
+  #home-cards-grid .about-capability-card:nth-child(odd) {
+    scroll-snap-align: start;
+  }
+
+  /* Text sized off the card's own rendered width (container query units)
+     instead of the full viewport (vw) — per feedback: "卡片内的字体可以
+     自适应一下". This is what actually keeps the text fitting the box
+     whenever the box itself is narrowed (by the width cap above, or just
+     this tier's own 2-per-row layout), instead of overflowing/overlapping
+     like a fixed vw-based size would once the box no longer matches the
+     viewport-relative assumption it was tuned for. */
   .about-capability-card-header-text {
-    font-size: clamp(10pt, calc(-19.65pt + 5.29vw), 28pt);
+    font-size: clamp(11pt, 8cqw, 26pt);
   }
 
   html[data-lang='zh'] .about-capability-card-header-text {
-    font-size: clamp(20pt, calc(3.53pt + 2.94vw), 30pt);
+    font-size: clamp(13pt, 7.5cqw, 28pt);
   }
 
   .about-capability-card-list li {
-    font-size: clamp(9pt, calc(-9pt + 4.5vw), 18pt);
+    font-size: clamp(8pt, 5cqw, 16pt);
   }
 
   html[data-lang='zh'] .about-capability-card-list li {
-    font-size: clamp(9pt, calc(-9pt + 4.5vw), 18pt);
+    font-size: clamp(8pt, 5cqw, 16pt);
+  }
+
+  .about-capability-card-footer-title {
+    font-size: clamp(11pt, 8cqw, 26pt);
+  }
+
+  html[data-lang='zh'] .about-capability-card-footer-title {
+    font-size: clamp(13pt, 7.5cqw, 28pt);
   }
 
   #home-cards-grid .about-capability-card-front {
@@ -455,24 +546,76 @@ html[data-lang='zh'] .about-capability-card-footer-title {
   }
 }
 
-/* 1-per-row tier (<=559px) — same static/flip-only behavior as the 2-up
-   tier above, single column. */
+/* 1-per-row tier (<=559px): a true phone width can't fit even 2 cards
+   per row without the same cutoff problem the carousel below was built to
+   solve, so this narrowest tier alone gets the horizontal scroll-snap
+   carousel — one card fills the panel at a time, swipe left/right (or the
+   prev/next arrows + dots) moves between the 4 cards, "类似跑马灯". Per
+   feedback: "现在都是截断的，可以改成小屏下，变成一张张卡片左右滑动么？
+   类似跑马灯？等展示完第四张之后，再向下滑动？" and "可以出现跑马灯的UI
+   组件，或类似箭头，用户可点击看到下一个卡片". */
 @media (max-width: 559px) {
+  #home-cards-panel {
+    align-items: center;
+    overflow: hidden;
+    /* Clears the fixed "CONTINUE TO SCROLL" pill (and the dot indicator
+       just above it, see .home-cards-dots below) sitting on top of this
+       same pinned viewport — without this the card's own bottom edge (and
+       its mirrored footer text) can run under/behind the pill on shorter
+       viewports, per feedback screenshot. Reduced from clamp(90px,16vh,
+       130px) — that reserved more room than the pill actually needs,
+       leaving a big empty gap above it once the card's own height was
+       also capped, per feedback: "现在距离下面的按钮有点宽". */
+    padding-bottom: clamp(72px, 12vh, 104px);
+  }
+
   #home-cards-grid {
     display: flex;
-    flex-direction: column;
-    gap: 1.2em;
+    flex-flow: row nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
     min-height: 0;
     height: auto !important;
+    scrollbar-width: none;
+  }
+
+  #home-cards-grid::-webkit-scrollbar {
+    display: none;
   }
 
   #home-cards-grid .about-capability-card {
     position: relative;
     top: auto;
     left: auto;
+    flex: 0 0 100%;
     width: 100%;
     max-width: none;
+    /* Hard cap so the card (plus its mirrored footer line) always clears
+       the dots/pill below, instead of relying purely on width-driven
+       aspect-ratio height (which can run taller than the space actually
+       available on shorter phones). Kept as its own tier (unchanged from
+       before the 2-up carousel rework above) per feedback: "一行只展示一
+       个卡片的breakpoint和交互还是保持之前的" — the width-cap/container-
+       query approach used at 560-900px isn't wanted here since it can
+       leave a peek of the next card visible instead of the single card
+       filling the row. Raised from 56vh/460px — that was capping the card
+       well short of the space actually available, leaving a big gap above
+       the pill, per feedback: "可以考虑高度变高一点？现在距离下面的按钮
+       有点宽". */
+    max-height: min(64vh, 520px);
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
     font-size: clamp(0.76rem, 2.05vw, 0.95rem);
+    border-radius: clamp(16px, 4vw, 24px);
+  }
+
+  #home-cards-grid .about-capability-card-front,
+  #home-cards-grid .about-capability-card-back {
+    border-radius: inherit;
   }
 
   .about-capability-card-header-text {
@@ -502,6 +645,88 @@ html[data-lang='zh'] .about-capability-card-footer-title {
   #home-cards-grid .about-capability-card-front {
     gap: 1.9em;
     padding: 1.9em 1.6em;
+  }
+}
+
+/* Prev/next arrows + dot indicator — shared by both mobile tiers (2-up
+   carousel at 560-900px and 1-up carousel at <=559px), since both are now
+   scroll-snap carousels. The dot count/active index is computed from
+   scrollWidth/clientWidth in syncCardsNav() (HomeHeroTimeline.ts), not
+   hardcoded, so it automatically reads as 2 pages at the 2-up tier and 4
+   pages at the 1-up tier without any change here. */
+@media (max-width: 900px) {
+  .home-cards-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    width: clamp(36px, 9vw, 44px);
+    height: clamp(36px, 9vw, 44px);
+    margin-top: -18px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(8, 10, 15, 0.55);
+    color: var(--color-white);
+    backdrop-filter: blur(6px);
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .home-cards-arrow svg {
+    width: 44%;
+    height: 44%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .home-cards-arrow:active {
+    transform: scale(0.92);
+  }
+
+  .home-cards-arrow[disabled] {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .home-cards-arrow--prev {
+    left: 0.4rem;
+  }
+
+  .home-cards-arrow--next {
+    right: 0.4rem;
+  }
+
+  .home-cards-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    position: absolute;
+    left: 50%;
+    /* Sits inside #home-cards-panel's own reserved bottom padding (see
+       both tiers above) — pulled up further from the edge so it doesn't
+       crowd the fixed "CONTINUE TO SCROLL" pill just below the panel. */
+    bottom: 2.4rem;
+    z-index: 2;
+    transform: translateX(-50%);
+  }
+
+  .home-cards-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.22);
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .home-cards-dot.is-active {
+    background: rgba(0, 0, 0, 0.75);
+    transform: scale(1.35);
   }
 }
 
